@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Align Everyday",
+    "slug": "align-everyday",
+    "scheme": "aligneveryday",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aligneveryday.app"
+    },
+    "android": {
+      "package": "com.aligneveryday.app",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

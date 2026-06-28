@@ -1,0 +1,135 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { ProgressScrubber } from '@/components/ProgressScrubber';
+import { useCourseWorkspace } from '@/hooks/useCourseWorkspace';
+import type { CourseMilestone } from '@/types/learning';
+import {
+  formatDuration,
+  formatRemainingTime,
+  getProgressPercentage,
+} from '@/utils/time';
+
+function TimelineMarker({
+  milestone,
+  isLast,
+}: {
+  milestone: CourseMilestone;
+  isLast: boolean;
+}) {
+  const isCompleted = milestone.state === 'completed';
+  const isCurrent = milestone.state === 'current';
+
+  return (
+    <View className="w-16 items-center self-stretch">
+      <View
+        className={`z-10 h-12 w-12 items-center justify-center rounded-full ${
+          isCompleted
+            ? 'bg-accent'
+            : isCurrent
+              ? 'border-4 border-accent bg-ink'
+              : 'border-[3px] border-zinc-600 bg-ink'
+        }`}
+      >
+        {isCompleted ? <Text className="text-2xl font-bold text-black">✓</Text> : null}
+      </View>
+      {!isLast ? (
+        <View className={`w-0.5 flex-1 ${isCompleted ? 'bg-accent' : 'bg-zinc-700'}`} />
+      ) : null}
+    </View>
+  );
+}
+
+export default function CourseWorkspaceScreen() {
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const { workspace: course } = useCourseWorkspace(courseId);
+  const persistedProgress = getProgressPercentage(
+    course.current_progress_sec,
+    course.total_duration_sec,
+  );
+  const [progress, setProgress] = useState(persistedProgress);
+
+  useEffect(() => setProgress(persistedProgress), [persistedProgress]);
+
+  const displayedProgressSeconds = Math.round((progress / 100) * course.total_duration_sec);
+  const remaining = Math.max(0, course.total_duration_sec - displayedProgressSeconds);
+
+  async function resumeCourse() {
+    if (course.source_url) await Linking.openURL(course.source_url);
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-ink" edges={['top', 'bottom']}>
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-6 pb-36 pt-5"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="flex-row items-center">
+          <Pressable
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            className="-ml-2 mr-3 h-12 w-12 items-center justify-center rounded-full active:bg-surface"
+            onPress={() => router.back()}
+          >
+            <Text className="text-4xl font-light leading-10 text-cream">‹</Text>
+          </Pressable>
+          <Text
+            className="min-w-0 flex-1 text-2xl font-bold tracking-tight text-cream"
+            numberOfLines={2}
+          >
+            {course.title}
+          </Text>
+        </View>
+
+        <View className="mt-14">
+          <View className="mb-7 flex-row items-end justify-between">
+            <Text className="text-4xl font-extrabold tracking-tight text-accent">
+              {formatDuration(displayedProgressSeconds)}
+            </Text>
+            <Text className="pb-1 text-base text-muted">
+              {formatRemainingTime(remaining)} remaining
+            </Text>
+          </View>
+          <ProgressScrubber onProgressChange={setProgress} progress={progress} />
+        </View>
+
+        <View className="mt-16">
+          {course.milestones.map((milestone, index) => (
+            <View className="min-h-28 flex-row" key={milestone.id}>
+              <TimelineMarker
+                isLast={index === course.milestones.length - 1}
+                milestone={milestone}
+              />
+              <View className="min-w-0 flex-1 pb-8 pl-4 pt-1">
+                <Text className="text-xl font-bold leading-7 text-cream">{milestone.title}</Text>
+                <Text
+                  className={`mt-2 text-base ${
+                    milestone.state === 'current' ? 'text-zinc-400' : 'text-muted'
+                  }`}
+                >
+                  {milestone.meta}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View className="absolute bottom-0 left-0 right-0 bg-ink px-6 pb-4 pt-3">
+        <Pressable
+          accessibilityRole="button"
+          className="items-center rounded-2xl bg-accent px-6 py-5 active:bg-orange-400"
+          onPress={resumeCourse}
+        >
+          <Text className="text-lg font-bold text-black">
+            Resume Learning on {course.platform}
+          </Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
