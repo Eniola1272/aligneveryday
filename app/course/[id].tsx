@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AddShelfModal from '@/app/components/AddShelfModal';
 import { ProgressScrubber } from '@/components/ProgressScrubber';
 import { useCourseWorkspace } from '@/hooks/useCourseWorkspace';
 import type { CourseMilestone } from '@/types/learning';
@@ -45,7 +46,7 @@ function TimelineMarker({
 export default function CourseWorkspaceScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const { workspace: course, updateProgress, updateStatus } = useCourseWorkspace(courseId);
+  const { workspace: course, updateProgress, updateStatus, updateCourse } = useCourseWorkspace(courseId);
   const persistedProgress = getProgressPercentage(
     course.current_progress_sec,
     course.total_duration_sec,
@@ -53,6 +54,7 @@ export default function CourseWorkspaceScreen() {
   const [progress, setProgress] = useState(persistedProgress);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => setProgress(persistedProgress), [persistedProgress]);
 
@@ -122,6 +124,15 @@ export default function CourseWorkspaceScreen() {
           >
             {course.title}
           </Text>
+          {course.id !== 'unavailable' ? (
+            <Pressable
+              accessibilityLabel="Edit course"
+              className="ml-3 rounded-full bg-surface px-4 py-2.5"
+              onPress={() => setIsEditOpen(true)}
+            >
+              <Text className="text-sm font-bold text-accent">Edit</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="mt-14">
@@ -180,6 +191,12 @@ export default function CourseWorkspaceScreen() {
           </Text>
         </Pressable>
       </View>
+      <AddShelfModal
+        course={course.id === 'unavailable' ? null : course}
+        onClose={() => setIsEditOpen(false)}
+        onUpdate={updateCourse}
+        visible={isEditOpen && course.id !== 'unavailable'}
+      />
     </SafeAreaView>
   );
 }

@@ -57,5 +57,6 @@ export function useCourseWorkspace(courseId?: string) {
     isMockData: false,
     updateProgress: workspace.updateCourseProgress,
     updateStatus: workspace.updateCourseStatus,
+    updateCourse: workspace.updateCourse,
   };
 }

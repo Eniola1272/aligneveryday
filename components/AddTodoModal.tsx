@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -11,23 +11,21 @@ import {
 } from 'react-native';
 
 import type { Course } from '@/types/database';
-
-interface AddTodoInput {
-  title: string;
-  courseId: string | null;
-  dueDate: string | null;
-}
+import type { DashboardTodo, TodoDraft } from '@/types/learning';
 
 interface AddTodoModalProps {
   visible: boolean;
   courses: Course[];
+  todo?: DashboardTodo | null;
   onClose: () => void;
-  onAdd: (input: AddTodoInput) => Promise<unknown>;
+  onAdd?: (input: TodoDraft) => Promise<unknown>;
+  onUpdate?: (todoId: string, input: TodoDraft) => Promise<unknown>;
 }
 
-type DueChoice = 'today' | 'tomorrow' | 'none';
+type DueChoice = 'today' | 'tomorrow' | 'none' | 'keep';
 
-function getDueDate(choice: DueChoice): string | null {
+function getDueDate(choice: DueChoice, existingDueDate: string | null): string | null {
+  if (choice === 'keep') return existingDueDate;
   if (choice === 'none') return null;
   const date = new Date();
   if (choice === 'tomorrow') date.setDate(date.getDate() + 1);
@@ -35,25 +33,51 @@ function getDueDate(choice: DueChoice): string | null {
   return date.toISOString();
 }
 
-export function AddTodoModal({ visible, courses, onClose, onAdd }: AddTodoModalProps) {
+function getDueChoice(value: string | null): DueChoice {
+  if (!value) return 'none';
+  const dueDate = new Date(value);
+  if (dueDate.toDateString() === new Date().toDateString()) return 'today';
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return dueDate.toDateString() === tomorrow.toDateString() ? 'tomorrow' : 'keep';
+}
+
+export function AddTodoModal({
+  visible,
+  courses,
+  todo,
+  onClose,
+  onAdd,
+  onUpdate,
+}: AddTodoModalProps) {
   const [title, setTitle] = useState('');
   const [courseId, setCourseId] = useState<string | null>(null);
   const [dueChoice, setDueChoice] = useState<DueChoice>('today');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!visible) return;
+    setTitle(todo?.task_title ?? '');
+    setCourseId(todo?.course_id ?? null);
+    setDueChoice(getDueChoice(todo?.due_date ?? null));
+    setError(null);
+  }, [todo, visible]);
+
   async function submit() {
     if (title.trim().length < 3) return setError('Make the action a little more specific.');
     setError(null);
     setIsSubmitting(true);
     try {
-      await onAdd({ title, courseId, dueDate: getDueDate(dueChoice) });
+      const draft = { title, courseId, dueDate: getDueDate(dueChoice, todo?.due_date ?? null) };
+      if (todo) await onUpdate?.(todo.id, draft);
+      else await onAdd?.(draft);
       setTitle('');
       setCourseId(null);
       setDueChoice('today');
       onClose();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to add alignment.');
+      setError(nextError instanceof Error ? nextError.message : 'Unable to save alignment.');
     } finally {
       setIsSubmitting(false);
     }
@@ -66,8 +90,12 @@ export function AddTodoModal({ visible, courses, onClose, onAdd }: AddTodoModalP
         <View className="max-h-[85%] rounded-t-[34px] bg-surface px-6 pb-10 pt-4">
           <View className="mx-auto mb-7 h-1.5 w-16 rounded-full bg-zinc-500" />
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text className="text-3xl font-extrabold tracking-tight text-cream">Create an alignment</Text>
-            <Text className="mt-2 text-base leading-6 text-muted">One concrete action you can finish—not a vague intention.</Text>
+            <Text className="text-3xl font-extrabold tracking-tight text-cream">
+              {todo ? 'Edit alignment' : 'Create an alignment'}
+            </Text>
+            <Text className="mt-2 text-base leading-6 text-muted">
+              {todo ? 'Keep the action specific, relevant, and scheduled honestly.' : 'One concrete action you can finish—not a vague intention.'}
+            </Text>
 
             {error ? <Text className="mt-5 text-sm text-red-400">{error}</Text> : null}
 
@@ -105,14 +133,26 @@ export function AddTodoModal({ visible, courses, onClose, onAdd }: AddTodoModalP
 
             <Text className="mb-3 mt-7 text-sm font-semibold text-zinc-300">When?</Text>
             <View className="flex-row gap-3">
-              {(['today', 'tomorrow', 'none'] as const).map((choice) => (
+              {([
+                'today',
+                'tomorrow',
+                ...(dueChoice === 'keep' ? (['keep'] as const) : []),
+                'none',
+              ] as const).map((choice) => (
                 <Pressable
                   className={`flex-1 items-center rounded-2xl px-2 py-3 ${dueChoice === choice ? 'bg-accent' : 'bg-elevated'}`}
                   key={choice}
                   onPress={() => setDueChoice(choice)}
                 >
                   <Text className={`text-sm font-semibold capitalize ${dueChoice === choice ? 'text-black' : 'text-cream'}`}>
-                    {choice === 'none' ? 'Someday' : choice}
+                    {choice === 'none'
+                      ? 'Someday'
+                      : choice === 'keep'
+                        ? new Date(todo?.due_date ?? '').toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        : choice}
                   </Text>
                 </Pressable>
               ))}
@@ -123,7 +163,9 @@ export function AddTodoModal({ visible, courses, onClose, onAdd }: AddTodoModalP
               disabled={isSubmitting}
               onPress={submit}
             >
-              <Text className="text-lg font-bold text-black">{isSubmitting ? 'Creating…' : 'Add alignment'}</Text>
+              <Text className="text-lg font-bold text-black">
+                {isSubmitting ? 'Saving…' : todo ? 'Save changes' : 'Add alignment'}
+              </Text>
             </Pressable>
           </ScrollView>
         </View>

@@ -4,9 +4,10 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressBar } from '@/components/ProgressBar';
+import AddShelfModal from '@/app/components/AddShelfModal';
 import { useProductivity } from '@/contexts/ProductivityContext';
 import { useTabActions } from '@/contexts/TabActionsContext';
-import type { CourseStatus } from '@/types/database';
+import type { Course, CourseStatus } from '@/types/database';
 import { getProgressPercentage } from '@/utils/time';
 
 const filters: { label: string; value: CourseStatus }[] = [
@@ -16,9 +17,10 @@ const filters: { label: string; value: CourseStatus }[] = [
 ];
 
 export default function ShelfScreen() {
-  const { courses, isLoading, error, refresh } = useProductivity();
+  const { courses, isLoading, error, refresh, updateCourse } = useProductivity();
   const { openAddCourse } = useTabActions();
   const [filter, setFilter] = useState<CourseStatus>('in_progress');
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const visibleCourses = useMemo(
     () => courses.filter((course) => course.status === filter),
     [courses, filter],
@@ -69,7 +71,19 @@ export default function ShelfScreen() {
                   <View className="h-12 w-12 items-center justify-center rounded-2xl bg-[#382600]">
                     <Text className="text-lg font-black text-accent">{course.platform.slice(0, 1)}</Text>
                   </View>
-                  <Text className="text-sm font-semibold text-muted">{course.platform}</Text>
+                  <View className="items-end">
+                    <Text className="text-sm font-semibold text-muted">{course.platform}</Text>
+                    <Pressable
+                      accessibilityLabel={`Edit ${course.title}`}
+                      className="mt-2 rounded-full bg-elevated px-3 py-2"
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        setEditingCourse(course);
+                      }}
+                    >
+                      <Text className="text-xs font-bold text-accent">Edit</Text>
+                    </Pressable>
+                  </View>
                 </View>
                 <Text className="mt-6 text-2xl font-bold leading-7 text-cream">{course.title}</Text>
                 <View className="mb-4 mt-7 flex-row justify-between">
@@ -97,6 +111,12 @@ export default function ShelfScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <AddShelfModal
+        course={editingCourse}
+        onClose={() => setEditingCourse(null)}
+        onUpdate={updateCourse}
+        visible={Boolean(editingCourse)}
+      />
     </SafeAreaView>
   );
 }

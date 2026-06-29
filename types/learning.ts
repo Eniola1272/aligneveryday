@@ -15,11 +15,17 @@ export interface DashboardTodo extends Todo {
   courseLabel: string | null;
 }
 
+export interface TodoDraft {
+  title: string;
+  courseId: string | null;
+  dueDate: string | null;
+}
+
 export interface AddShelfDraft {
   title: string;
   sourceUrl: string;
   platform: LearningPlatform;
   hours: number;
   minutes: number;
-  status: Extract<CourseStatus, 'backlog' | 'in_progress'>;
+  status: CourseStatus;
 }

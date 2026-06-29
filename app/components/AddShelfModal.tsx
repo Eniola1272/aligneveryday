@@ -11,14 +11,15 @@ import {
   View,
 } from 'react-native';
 
-import type { LearningPlatform } from '@/types/database';
-import type { CourseStatus } from '@/types/database';
+import type { Course, CourseStatus, LearningPlatform } from '@/types/database';
 import type { AddShelfDraft } from '@/types/learning';
 
 interface AddShelfModalProps {
   visible: boolean;
+  course?: Course | null;
   onClose: () => void;
   onAdd?: (draft: AddShelfDraft) => void | Promise<void>;
+  onUpdate?: (courseId: string, draft: AddShelfDraft) => void | Promise<void>;
 }
 
 interface PlatformOption {
@@ -42,8 +43,10 @@ function parseNumber(value: string, max: number): number {
 
 export default function AddShelfModal({
   visible,
+  course,
   onClose,
   onAdd,
+  onUpdate,
 }: AddShelfModalProps) {
   const [sourceUrl, setSourceUrl] = useState('');
   const [title, setTitle] = useState('');
@@ -51,12 +54,22 @@ export default function AddShelfModal({
   const [platform, setPlatform] = useState<LearningPlatform>('YouTube');
   const [hours, setHours] = useState(2);
   const [minutes, setMinutes] = useState(45);
-  const [status, setStatus] = useState<Extract<CourseStatus, 'backlog' | 'in_progress'>>('in_progress');
+  const [status, setStatus] = useState<CourseStatus>('in_progress');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
+
+    if (course) {
+      setTitle(course.title);
+      setSourceUrl(course.source_url ?? '');
+      setPlatform(course.platform);
+      setHours(Math.floor(course.total_duration_sec / 3600));
+      setMinutes(Math.floor((course.total_duration_sec % 3600) / 60));
+      setStatus(course.status);
+      setError(null);
+    }
 
     async function readClipboard() {
       try {
@@ -68,7 +81,7 @@ export default function AddShelfModal({
     }
 
     void readClipboard();
-  }, [visible]);
+  }, [course, visible]);
 
   function updateSourceUrl(value: string) {
     setSourceUrl(value);
@@ -95,7 +108,9 @@ export default function AddShelfModal({
     setError(null);
     setIsSubmitting(true);
     try {
-      await onAdd?.({ title, sourceUrl, platform, hours, minutes, status });
+      const draft = { title, sourceUrl, platform, hours, minutes, status };
+      if (course) await onUpdate?.(course.id, draft);
+      else await onAdd?.(draft);
       setTitle('');
       setSourceUrl('');
       setStatus('in_progress');
@@ -133,7 +148,7 @@ export default function AddShelfModal({
             showsVerticalScrollIndicator={false}
           >
             <Text className="mb-6 text-3xl font-extrabold tracking-tight text-cream">
-              Add to Learning Shelf
+              {course ? 'Edit Learning Path' : 'Add to Learning Shelf'}
             </Text>
 
             {error ? (
@@ -268,6 +283,12 @@ export default function AddShelfModal({
                 <Text className={`font-bold ${status === 'backlog' ? 'text-black' : 'text-cream'}`}>Save for later</Text>
                 <Text className={`mt-1 text-xs ${status === 'backlog' ? 'text-black/70' : 'text-muted'}`}>Keep in backlog</Text>
               </Pressable>
+              {course ? (
+                <Pressable className={`flex-1 rounded-2xl px-4 py-4 ${status === 'completed' ? 'bg-accent' : 'bg-elevated'}`} onPress={() => setStatus('completed')}>
+                  <Text className={`font-bold ${status === 'completed' ? 'text-black' : 'text-cream'}`}>Completed</Text>
+                  <Text className={`mt-1 text-xs ${status === 'completed' ? 'text-black/70' : 'text-muted'}`}>Publish proof</Text>
+                </Pressable>
+              ) : null}
             </View>
 
             <Pressable
@@ -279,7 +300,7 @@ export default function AddShelfModal({
               onPress={submit}
             >
               <Text className="text-lg font-bold text-black">
-                {isSubmitting ? 'Adding…' : 'Add to Shelf'}
+                {isSubmitting ? 'Saving…' : course ? 'Save changes' : 'Add to Shelf'}
               </Text>
             </Pressable>
           </ScrollView>

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddTodoModal } from '@/components/AddTodoModal';
 import { useProductivity } from '@/contexts/ProductivityContext';
+import type { DashboardTodo } from '@/types/learning';
 
 type TaskFilter = 'today' | 'upcoming' | 'completed';
 
@@ -13,9 +14,25 @@ function isToday(value: string | null) {
 }
 
 export default function AlignmentsScreen() {
-  const { courses, todos, addTodo, toggleTodo, deleteTodo, error, refresh } = useProductivity();
+  const { courses, todos, addTodo, updateTodo, toggleTodo, deleteTodo, error, refresh } = useProductivity();
   const [filter, setFilter] = useState<TaskFilter>('today');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<DashboardTodo | null>(null);
+
+  function openCreateModal() {
+    setEditingTodo(null);
+    setIsModalOpen(true);
+  }
+
+  function openEditModal(todo: DashboardTodo) {
+    setEditingTodo(todo);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+    setEditingTodo(null);
+  }
   function confirmDelete(todoId: string) {
     Alert.alert('Delete alignment?', 'This removes the action from your learning record.', [
       { text: 'Cancel', style: 'cancel' },
@@ -41,7 +58,7 @@ export default function AlignmentsScreen() {
             <Text className="mt-3 text-4xl font-extrabold tracking-tight text-cream">Alignments.</Text>
             <Text className="mt-2 text-base text-muted">Small actions that move the identity forward.</Text>
           </View>
-          <Pressable className="h-12 w-12 items-center justify-center rounded-2xl bg-accent" onPress={() => setIsModalOpen(true)}>
+          <Pressable className="h-12 w-12 items-center justify-center rounded-2xl bg-accent" onPress={openCreateModal}>
             <Text className="text-3xl font-light text-black">+</Text>
           </Pressable>
         </View>
@@ -77,6 +94,9 @@ export default function AlignmentsScreen() {
                   <Text className="text-xs text-muted">{todo.due_date ? (isToday(todo.due_date) ? 'Today' : new Date(todo.due_date).toLocaleDateString()) : 'No deadline'}</Text>
                 </View>
               </View>
+              <Pressable accessibilityLabel="Edit alignment" className="ml-2 p-2" onPress={() => openEditModal(todo)}>
+                <Text className="text-base text-accent">✎</Text>
+              </Pressable>
               <Pressable accessibilityLabel="Delete alignment" className="ml-3 p-2" onPress={() => confirmDelete(todo.id)}>
                 <Text className="text-lg text-zinc-600">×</Text>
               </Pressable>
@@ -93,7 +113,14 @@ export default function AlignmentsScreen() {
         ) : null}
       </ScrollView>
 
-      <AddTodoModal courses={courses} onAdd={addTodo} onClose={() => setIsModalOpen(false)} visible={isModalOpen} />
+      <AddTodoModal
+        courses={courses}
+        onAdd={addTodo}
+        onClose={closeModal}
+        onUpdate={updateTodo}
+        todo={editingTodo}
+        visible={isModalOpen}
+      />
     </SafeAreaView>
   );
 }

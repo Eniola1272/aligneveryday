@@ -10,14 +10,8 @@ import {
 import { mockCourses, mockTodos } from '@/data/mock';
 import { supabase } from '@/lib/supabase';
 import type { Course, CourseStatus, Todo } from '@/types/database';
-import type { AddShelfDraft, DashboardTodo } from '@/types/learning';
+import type { AddShelfDraft, DashboardTodo, TodoDraft } from '@/types/learning';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface AddTodoInput {
-  title: string;
-  courseId: string | null;
-  dueDate: string | null;
-}
 
 interface ProductivityContextValue {
   courses: Course[];
@@ -25,7 +19,9 @@ interface ProductivityContextValue {
   isLoading: boolean;
   error: string | null;
   addCourse: (draft: AddShelfDraft) => Promise<Course>;
-  addTodo: (input: AddTodoInput) => Promise<Todo>;
+  updateCourse: (courseId: string, draft: AddShelfDraft) => Promise<void>;
+  addTodo: (input: TodoDraft) => Promise<Todo>;
+  updateTodo: (todoId: string, input: TodoDraft) => Promise<void>;
   toggleTodo: (todoId: string) => Promise<void>;
   deleteTodo: (todoId: string) => Promise<void>;
   updateCourseProgress: (courseId: string, seconds: number) => Promise<void>;
@@ -123,6 +119,40 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         setCourses((current) => [data, ...current]);
         return data;
       },
+      async updateCourse(courseId, draft) {
+        const target = courses.find((course) => course.id === courseId);
+        if (!target) throw new Error('That course could not be found.');
+        const updates = {
+          title: draft.title.trim(),
+          platform: draft.platform,
+          source_url: draft.sourceUrl.trim() || null,
+          total_duration_sec: draft.hours * 3600 + draft.minutes * 60,
+          current_progress_sec: Math.min(
+            target.current_progress_sec,
+            draft.hours * 3600 + draft.minutes * 60,
+          ),
+          status: draft.status,
+        };
+        const previous = courses;
+        setCourses((current) =>
+          current.map((course) => (course.id === courseId ? { ...course, ...updates } : course)),
+        );
+        setTodos((current) => withCourseLabels(
+          courses.map((course) => (course.id === courseId ? { ...course, ...updates } : course)),
+          current,
+        ));
+        if (!isDemo && supabase) {
+          const { error: mutationError } = await supabase
+            .from('courses')
+            .update(updates)
+            .eq('id', courseId);
+          if (mutationError) {
+            setCourses(previous);
+            setTodos((current) => withCourseLabels(previous, current));
+            throw new Error(mutationError.message);
+          }
+        }
+      },
       async addTodo(input) {
         if (!userId) throw new Error('Sign in to add an alignment.');
         const todoInput = {
@@ -147,6 +177,36 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         }
         setTodos((current) => withCourseLabels(courses, [todo, ...current]));
         return todo;
+      },
+      async updateTodo(todoId, input) {
+        const target = todos.find((todo) => todo.id === todoId);
+        if (!target) throw new Error('That alignment could not be found.');
+        const updates = {
+          task_title: input.title.trim(),
+          course_id: input.courseId,
+          due_date: input.dueDate,
+        };
+        setTodos((current) =>
+          withCourseLabels(
+            courses,
+            current.map((todo) => (todo.id === todoId ? { ...todo, ...updates } : todo)),
+          ),
+        );
+        if (!isDemo && supabase) {
+          const { error: mutationError } = await supabase
+            .from('todos')
+            .update(updates)
+            .eq('id', todoId);
+          if (mutationError) {
+            setTodos((current) =>
+              withCourseLabels(
+                courses,
+                current.map((todo) => (todo.id === todoId ? target : todo)),
+              ),
+            );
+            throw new Error(mutationError.message);
+          }
+        }
       },
       async toggleTodo(todoId) {
         const target = todos.find((todo) => todo.id === todoId);
