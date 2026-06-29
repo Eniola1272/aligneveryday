@@ -1,16 +1,16 @@
 export type CourseStatus = 'backlog' | 'in_progress' | 'completed';
 export type LearningPlatform = 'YouTube' | 'Udemy' | 'Coursera' | 'Custom';
 
-export interface Profile {
+export type Profile = {
   id: string;
   full_name: string | null;
   username: string | null;
   avatar_url: string | null;
   bio: string | null;
   portfolio_public: boolean;
-}
+};
 
-export interface Course {
+export type Course = {
   id: string;
   user_id: string;
   title: string;
@@ -19,16 +19,16 @@ export interface Course {
   total_duration_sec: number;
   current_progress_sec: number;
   status: CourseStatus;
-}
+};
 
-export interface Todo {
+export type Todo = {
   id: string;
   user_id: string;
   course_id: string | null;
   task_title: string;
   is_completed: boolean;
   due_date: string | null;
-}
+};
 
 type Insertable<T extends { id: string }> = Omit<T, 'id'> & { id?: string };
 type Updatable<T> = Partial<T>;

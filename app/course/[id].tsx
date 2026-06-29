@@ -45,12 +45,14 @@ function TimelineMarker({
 export default function CourseWorkspaceScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const { workspace: course } = useCourseWorkspace(courseId);
+  const { workspace: course, updateProgress, updateStatus } = useCourseWorkspace(courseId);
   const persistedProgress = getProgressPercentage(
     course.current_progress_sec,
     course.total_duration_sec,
   );
   const [progress, setProgress] = useState(persistedProgress);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => setProgress(persistedProgress), [persistedProgress]);
 
@@ -58,7 +60,44 @@ export default function CourseWorkspaceScreen() {
   const remaining = Math.max(0, course.total_duration_sec - displayedProgressSeconds);
 
   async function resumeCourse() {
-    if (course.source_url) await Linking.openURL(course.source_url);
+    const saved = await saveProgress();
+    if (!saved) return;
+    if (course.source_url) {
+      try {
+        await Linking.openURL(course.source_url);
+      } catch {
+        setFeedback('That learning link could not be opened.');
+      }
+    }
+  }
+
+  async function saveProgress() {
+    setIsSaving(true);
+    setFeedback(null);
+    try {
+      await updateProgress(course.id, displayedProgressSeconds);
+      if (course.status === 'backlog' && displayedProgressSeconds > 0) {
+        await updateStatus(course.id, 'in_progress');
+      }
+      setFeedback('Progress saved');
+      return true;
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Could not save progress.');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function completeCourse() {
+    setIsSaving(true);
+    try {
+      await updateProgress(course.id, course.total_duration_sec);
+      await updateStatus(course.id, 'completed');
+      router.back();
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -95,6 +134,13 @@ export default function CourseWorkspaceScreen() {
             </Text>
           </View>
           <ProgressScrubber onProgressChange={setProgress} progress={progress} />
+          <View className="mt-4 flex-row items-center justify-between">
+            <Text className="text-sm text-muted">Drag to update your learning time.</Text>
+            <Pressable className="rounded-full bg-surface px-4 py-2" disabled={isSaving} onPress={() => void saveProgress()}>
+              <Text className="text-sm font-bold text-accent">{isSaving ? 'Saving…' : 'Save'}</Text>
+            </Pressable>
+          </View>
+          {feedback ? <Text className="mt-3 text-sm text-accent">{feedback}</Text> : null}
         </View>
 
         <View className="mt-16">
@@ -117,16 +163,20 @@ export default function CourseWorkspaceScreen() {
             </View>
           ))}
         </View>
+        <Pressable className="mt-2 items-center rounded-2xl bg-surface px-5 py-4" disabled={isSaving} onPress={() => void completeCourse()}>
+          <Text className="font-bold text-cream">Mark course complete</Text>
+        </Pressable>
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0 bg-ink px-6 pb-4 pt-3">
         <Pressable
           accessibilityRole="button"
           className="items-center rounded-2xl bg-accent px-6 py-5 active:bg-orange-400"
+          disabled={isSaving}
           onPress={resumeCourse}
         >
           <Text className="text-lg font-bold text-black">
-            Resume Learning on {course.platform}
+            {isSaving ? 'Saving progress…' : course.source_url ? `Resume Learning on ${course.platform}` : 'Save learning progress'}
           </Text>
         </Pressable>
       </View>

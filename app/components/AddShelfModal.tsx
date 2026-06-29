@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 
 import type { LearningPlatform } from '@/types/database';
+import type { CourseStatus } from '@/types/database';
 import type { AddShelfDraft } from '@/types/learning';
 
 interface AddShelfModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdd?: (draft: AddShelfDraft) => void;
+  onAdd?: (draft: AddShelfDraft) => void | Promise<void>;
 }
 
 interface PlatformOption {
@@ -33,8 +34,6 @@ const platformOptions: PlatformOption[] = [
   { label: 'Custom Manual Entry', value: 'Custom', glyph: '✎' },
 ];
 
-const demoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-
 function parseNumber(value: string, max: number): number {
   const nextValue = Number.parseInt(value.replace(/\D/g, ''), 10);
   if (Number.isNaN(nextValue)) return 0;
@@ -46,31 +45,66 @@ export default function AddShelfModal({
   onClose,
   onAdd,
 }: AddShelfModalProps) {
-  const [sourceUrl, setSourceUrl] = useState(demoUrl);
-  const [clipboardValue, setClipboardValue] = useState('https://youtube.com/...');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [clipboardValue, setClipboardValue] = useState('');
   const [platform, setPlatform] = useState<LearningPlatform>('YouTube');
   const [hours, setHours] = useState(2);
   const [minutes, setMinutes] = useState(45);
+  const [status, setStatus] = useState<Extract<CourseStatus, 'backlog' | 'in_progress'>>('in_progress');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
 
     async function readClipboard() {
-      const value = await Clipboard.getStringAsync();
-      if (/^https?:\/\//i.test(value)) setClipboardValue(value);
+      try {
+        const value = await Clipboard.getStringAsync();
+        if (/^https?:\/\//i.test(value)) setClipboardValue(value);
+      } catch {
+        // Clipboard access can be unavailable until the user explicitly pastes.
+      }
     }
 
     void readClipboard();
   }, [visible]);
+
+  function updateSourceUrl(value: string) {
+    setSourceUrl(value);
+    const normalized = value.toLowerCase();
+    if (normalized.includes('youtube.com') || normalized.includes('youtu.be')) setPlatform('YouTube');
+    else if (normalized.includes('udemy.com')) setPlatform('Udemy');
+    else if (normalized.includes('coursera.org')) setPlatform('Coursera');
+  }
 
   const truncatedClipboard = useMemo(() => {
     if (clipboardValue.length <= 32) return clipboardValue;
     return `${clipboardValue.slice(0, 29)}…`;
   }, [clipboardValue]);
 
-  function submit() {
-    onAdd?.({ sourceUrl, platform, hours, minutes });
-    onClose();
+  async function submit() {
+    if (!title.trim()) {
+      setError('Give this learning path a clear title.');
+      return;
+    }
+    if (sourceUrl.trim() && !/^https?:\/\//i.test(sourceUrl.trim())) {
+      setError('Use a complete link beginning with http:// or https://.');
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onAdd?.({ title, sourceUrl, platform, hours, minutes, status });
+      setTitle('');
+      setSourceUrl('');
+      setStatus('in_progress');
+      onClose();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to add this course.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -102,6 +136,23 @@ export default function AddShelfModal({
               Add to Learning Shelf
             </Text>
 
+            {error ? (
+              <View className="mb-4 rounded-2xl bg-red-500/10 p-4">
+                <Text className="text-sm text-red-400">{error}</Text>
+              </View>
+            ) : null}
+
+            <Text className="mb-2 text-sm font-semibold text-zinc-300">Course title</Text>
+            <TextInput
+              accessibilityLabel="Course title"
+              className="mb-4 rounded-2xl bg-elevated px-5 py-4 text-base text-cream"
+              onChangeText={setTitle}
+              placeholder="e.g. Advanced React Patterns"
+              placeholderTextColor="#737373"
+              selectionColor="#FF9D00"
+              value={title}
+            />
+
             <View className="flex-row items-center rounded-3xl bg-elevated px-5 py-4">
               <Text className="mr-4 text-2xl text-muted">↗</Text>
               <TextInput
@@ -109,7 +160,7 @@ export default function AddShelfModal({
                 autoCapitalize="none"
                 autoCorrect={false}
                 className="min-w-0 flex-1 text-base text-cream"
-                onChangeText={setSourceUrl}
+                onChangeText={updateSourceUrl}
                 placeholder="Paste a course or video link"
                 placeholderTextColor="#737373"
                 selectionColor="#FF9D00"
@@ -126,17 +177,19 @@ export default function AddShelfModal({
               ) : null}
             </View>
 
-            <Pressable
-              accessibilityRole="button"
-              className="mt-3 flex-row items-center rounded-full bg-[#2C210D] px-5 py-3.5 active:opacity-70"
-              onPress={() => setSourceUrl(clipboardValue)}
-            >
-              <Text className="mr-3 text-lg text-accent">▣</Text>
-              <Text className="flex-1 text-sm font-medium text-accent" numberOfLines={1}>
-                Paste from clipboard: {truncatedClipboard}
-              </Text>
-              <Text className="text-xl text-accent">›</Text>
-            </Pressable>
+            {clipboardValue ? (
+              <Pressable
+                accessibilityRole="button"
+                className="mt-3 flex-row items-center rounded-full bg-[#2C210D] px-5 py-3.5 active:opacity-70"
+                onPress={() => updateSourceUrl(clipboardValue)}
+              >
+                <Text className="mr-3 text-lg text-accent">▣</Text>
+                <Text className="flex-1 text-sm font-medium text-accent" numberOfLines={1}>
+                  Paste from clipboard: {truncatedClipboard}
+                </Text>
+                <Text className="text-xl text-accent">›</Text>
+              </Pressable>
+            ) : null}
 
             <ScrollView
               className="-mx-6 mt-6"
@@ -205,12 +258,29 @@ export default function AddShelfModal({
               </View>
             </View>
 
+            <Text className="mb-3 mt-7 text-sm font-semibold text-zinc-300">Shelf position</Text>
+            <View className="flex-row gap-3">
+              <Pressable className={`flex-1 rounded-2xl px-4 py-4 ${status === 'in_progress' ? 'bg-accent' : 'bg-elevated'}`} onPress={() => setStatus('in_progress')}>
+                <Text className={`font-bold ${status === 'in_progress' ? 'text-black' : 'text-cream'}`}>Start now</Text>
+                <Text className={`mt-1 text-xs ${status === 'in_progress' ? 'text-black/70' : 'text-muted'}`}>Add to focus</Text>
+              </Pressable>
+              <Pressable className={`flex-1 rounded-2xl px-4 py-4 ${status === 'backlog' ? 'bg-accent' : 'bg-elevated'}`} onPress={() => setStatus('backlog')}>
+                <Text className={`font-bold ${status === 'backlog' ? 'text-black' : 'text-cream'}`}>Save for later</Text>
+                <Text className={`mt-1 text-xs ${status === 'backlog' ? 'text-black/70' : 'text-muted'}`}>Keep in backlog</Text>
+              </Pressable>
+            </View>
+
             <Pressable
               accessibilityRole="button"
-              className="mt-8 items-center rounded-2xl bg-accent px-6 py-5 active:bg-orange-400"
+              className={`mt-8 items-center rounded-2xl bg-accent px-6 py-5 ${
+                isSubmitting ? 'opacity-50' : 'active:bg-orange-400'
+              }`}
+              disabled={isSubmitting}
               onPress={submit}
             >
-              <Text className="text-lg font-bold text-black">Add to Shelf</Text>
+              <Text className="text-lg font-bold text-black">
+                {isSubmitting ? 'Adding…' : 'Add to Shelf'}
+              </Text>
             </Pressable>
           </ScrollView>
         </View>

@@ -1,9 +1,14 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AddTodoModal } from '@/components/AddTodoModal';
 import { CourseCard } from '@/components/CourseCard';
 import { SectionHeader } from '@/components/SectionHeader';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProductivity } from '@/contexts/ProductivityContext';
+import { useTabActions } from '@/contexts/TabActionsContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { DashboardTodo } from '@/types/learning';
 
@@ -15,37 +20,43 @@ function formatDashboardDate(date: Date): string {
   }).format(date);
 }
 
-function AlignmentRow({ todo }: { todo: DashboardTodo }) {
+function AlignmentRow({ todo, onToggle }: { todo: DashboardTodo; onToggle: () => void }) {
   function openLinkedCourse() {
     if (!todo.course_id) return;
     router.push({ pathname: '/course/[id]', params: { id: todo.course_id } });
   }
 
   return (
-    <Pressable
-      accessibilityHint={todo.course_id ? 'Opens the linked course' : undefined}
-      accessibilityRole="button"
-      className="mb-2 min-h-20 flex-row items-center rounded-2xl bg-surface px-4 py-3 active:bg-elevated"
-      onPress={openLinkedCourse}
-    >
-      <View className="mr-4 h-2.5 w-2.5 rounded-full bg-accent" />
+    <View className="mb-2 min-h-20 flex-row items-center rounded-2xl bg-surface px-4 py-3">
+      <Pressable
+        accessibilityLabel="Complete alignment"
+        className="mr-4 h-7 w-7 items-center justify-center rounded-full border-2 border-zinc-600 active:border-accent"
+        onPress={onToggle}
+      />
       {todo.courseLabel ? (
         <View className="mr-4 rounded-lg bg-elevated px-3 py-2">
           <Text className="text-sm font-semibold text-accent">{todo.courseLabel}</Text>
         </View>
       ) : null}
-      <Text className="min-w-0 flex-1 text-base font-medium leading-6 text-cream">
-        {todo.task_title}
-      </Text>
-      <View className="ml-3 h-9 w-9 items-center justify-center rounded-full bg-elevated">
-        <Text className="text-2xl leading-6 text-accent">›</Text>
-      </View>
-    </Pressable>
+      <Pressable className="min-w-0 flex-1" onPress={openLinkedCourse}>
+        <Text className="text-base font-medium leading-6 text-cream">{todo.task_title}</Text>
+      </Pressable>
+      {todo.course_id ? (
+        <Pressable className="ml-3 h-9 w-9 items-center justify-center rounded-full bg-elevated" onPress={openLinkedCourse}>
+          <Text className="text-2xl leading-6 text-accent">›</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
 export default function DashboardScreen() {
-  const { courses, todos } = useDashboardData();
+  const { profile } = useAuth();
+  const { courses, todos, isLoading, error, refresh } = useDashboardData();
+  const { courses: allCourses, addTodo, toggleTodo } = useProductivity();
+  const { openAddCourse } = useTabActions();
+  const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+  const firstName = profile?.full_name?.split(' ')[0];
 
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={['top']}>
@@ -61,7 +72,7 @@ export default function DashboardScreen() {
                 Today,
               </Text>
               <Text className="text-[42px] font-extrabold leading-[46px] tracking-tight text-cream">
-                Align Everyday.
+                {firstName ? `Align, ${firstName}.` : 'Align Everyday.'}
               </Text>
             </View>
             <View className="absolute right-0 top-1 flex-row items-center rounded-full bg-surface px-3 py-2">
@@ -71,47 +82,74 @@ export default function DashboardScreen() {
             </View>
           </View>
           <Text className="mt-6 text-lg text-muted">{formatDashboardDate(new Date())}</Text>
+          {error ? (
+            <Pressable className="mt-6 rounded-2xl bg-red-500/10 p-4" onPress={() => void refresh()}>
+              <Text className="font-bold text-red-400">Workspace could not sync.</Text>
+              <Text className="mt-1 text-sm text-zinc-300">Tap to try again. Your local screen is still safe.</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="mb-14">
           <View className="px-6">
             <SectionHeader
               actionLabel="See all"
+              onPress={() => router.push('/shelf')}
               subtitle="Keep momentum on what matters."
               title="Focus Shelf"
             />
           </View>
-          <ScrollView
-            contentContainerClassName="pl-6 pr-2"
-            decelerationRate="fast"
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          >
-            {courses.map((course) => (
-              <CourseCard
-                course={course}
-                key={course.id}
-                onPress={() =>
-                  router.push({ pathname: '/course/[id]', params: { id: course.id } })
-                }
-              />
-            ))}
-          </ScrollView>
+          {isLoading ? <ActivityIndicator className="py-16" color="#FF9D00" /> : null}
+          {!isLoading && courses.length > 0 ? (
+            <ScrollView
+              contentContainerClassName="pl-6 pr-2"
+              decelerationRate="fast"
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
+              {courses.map((course) => (
+                <CourseCard
+                  course={course}
+                  key={course.id}
+                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: course.id } })}
+                />
+              ))}
+            </ScrollView>
+          ) : null}
+          {!isLoading && courses.length === 0 ? (
+            <Pressable className="mx-6 rounded-[28px] bg-surface p-7 active:bg-elevated" onPress={openAddCourse}>
+              <Text className="text-3xl text-accent">＋</Text>
+              <Text className="mt-4 text-xl font-bold text-cream">Choose one thing worth finishing.</Text>
+              <Text className="mt-2 text-base leading-6 text-muted">Add a course, video series, or manual learning path to begin.</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="px-6">
           <SectionHeader
             actionLabel="View all"
+            onPress={() => router.push('/alignments')}
             subtitle="Small actions. Big results."
             title="Today’s Alignments"
           />
           <View>
-            {todos.map((todo) => (
-              <AlignmentRow key={todo.id} todo={todo} />
+            {todos.slice(0, 5).map((todo) => (
+              <AlignmentRow key={todo.id} onToggle={() => void toggleTodo(todo.id)} todo={todo} />
             ))}
           </View>
+          {todos.length === 0 ? (
+            <Pressable className="rounded-[28px] bg-surface p-7" onPress={() => setIsTodoModalOpen(true)}>
+              <Text className="text-2xl text-accent">✓</Text>
+              <Text className="mt-4 text-xl font-bold text-cream">Your day has room.</Text>
+              <Text className="mt-2 text-base leading-6 text-muted">Define one specific action that would make today count.</Text>
+            </Pressable>
+          ) : null}
+          <Pressable className="mt-4 items-center rounded-2xl bg-elevated py-4" onPress={() => setIsTodoModalOpen(true)}>
+            <Text className="font-bold text-accent">+ Add an alignment</Text>
+          </Pressable>
         </View>
       </ScrollView>
+      <AddTodoModal courses={allCourses} onAdd={addTodo} onClose={() => setIsTodoModalOpen(false)} visible={isTodoModalOpen} />
     </SafeAreaView>
   );
 }

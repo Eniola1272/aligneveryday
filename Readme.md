@@ -1,26 +1,56 @@
 # Align Everyday
 
-An editorial, dark-mode learning portfolio for independent professionals. The
-prototype is built with Expo Router, NativeWind, and a typed Supabase client.
+Align Everyday is an identity-driven learning and productivity app for self-taught professionals. It connects courses, daily actions, progress tracking, and a visible portfolio in one calm system.
+
+## Product flow
+
+1. Create an account, confirm email, or enter the interactive demo.
+2. Complete the short identity and portfolio onboarding.
+3. Add a YouTube, Udemy, Coursera, or manual learning path.
+4. Turn the learning path into concrete daily alignments.
+5. Check off work and update elapsed learning time.
+6. Complete a course and surface it in the learning portfolio.
+
+The app includes sign-in, sign-up, email recovery, protected routes, onboarding, shelf filters, course progress, task CRUD, profile controls, and resilient loading, empty, and error states.
+
+## Stack
+
+- Expo SDK 56 and Expo Router
+- React Native with strict TypeScript
+- NativeWind
+- Supabase Auth and PostgreSQL with row-level security
+- AsyncStorage-backed native sessions
 
 ## Run locally
 
-1. Install dependencies with `npm install`.
-2. Copy `.env.example` to `.env` and add your Supabase project values.
-3. Start Expo with `npm run start` (or `npm run web`).
+1. Install dependencies:
 
-The screens use mock data when Supabase credentials or an authenticated user ID
-are not available, so the visual prototype works immediately.
+   ```bash
+   npm install
+   ```
 
-## Routes
+2. Copy `.env.example` to `.env` and add the public Supabase values:
 
-- `/` — daily dashboard and learning shelf
-- `/course/[id]` — focused course workspace
-- The center tab action opens the native add-to-shelf bottom sheet
+   ```env
+   EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-client-safe-key
+   ```
 
-## Data model
+3. Apply the SQL files in `supabase/migrations` in filename order. They create the core tables, user-profile trigger, RLS policies, and public portfolio read policies.
 
-The typed client in `lib/supabase.ts` maps to `profiles`, `courses`, and `todos`.
-The initial SQL migration lives in `supabase/migrations`. Replace the mock user
-ID in your auth layer and pass the active session user to `useDashboardData` and
-`useCourseWorkspace` when authentication is connected.
+4. Start the app:
+
+   ```bash
+   npm run start
+   ```
+
+Use “Explore with demo data” on the welcome screen to evaluate the full productivity flow without creating an account.
+
+## Validation
+
+```bash
+npm run typecheck
+npm run build
+```
+
+`npm run build` produces the Expo web export in `dist`.
