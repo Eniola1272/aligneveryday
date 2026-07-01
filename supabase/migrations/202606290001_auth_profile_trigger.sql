@@ -1,3 +1,8 @@
+-- Production safety
+-- Backup: run `supabase db dump --linked --schema auth,public -f backups/202606290001.sql`.
+-- Rollback: drop trigger auth.users.on_auth_user_created, then drop
+-- public.handle_new_user(); existing profile rows should be retained.
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql

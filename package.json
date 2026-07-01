@@ -9,7 +9,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:lint": "supabase db lint --local --level error"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -20,6 +23,7 @@
     "expo-linking": "~56.0.14",
     "expo-router": "~56.2.11",
     "expo-status-bar": "~56.0.4",
+    "expo-web-browser": "~56.0.5",
     "nativewind": "^4.2.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

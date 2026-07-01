@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import {
   createContext,
   type PropsWithChildren,
@@ -8,6 +9,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types/database';
@@ -46,6 +48,7 @@ interface AuthContextValue {
   isDemo: boolean;
   needsOnboarding: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (input: SignUpInput) => Promise<{ needsEmailConfirmation: boolean }>;
   sendPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -55,6 +58,33 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+WebBrowser.maybeCompleteAuthSession();
+
+async function consumeAuthRedirect(url: string) {
+  if (!supabase) return;
+  const normalized = url.replace('#', '?');
+  const query = normalized.split('?')[1];
+  if (!query) return;
+
+  const params = new URLSearchParams(query);
+  const code = params.get('code');
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) throw error;
+    return;
+  }
+
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error) throw error;
+  }
+}
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
@@ -109,23 +139,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!supabase) return;
 
-    async function consumeAuthLink(url: string) {
-      const normalized = url.replace('#', '?');
-      const query = normalized.split('?')[1];
-      if (!query) return;
-      const params = new URLSearchParams(query);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      if (accessToken && refreshToken) {
-        await supabase?.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-      }
-    }
-
     void Linking.getInitialURL().then((url) => {
-      if (url) void consumeAuthLink(url);
+      if (url) void consumeAuthRedirect(url);
     });
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      void consumeAuthLink(url);
+      void consumeAuthRedirect(url);
     });
     return () => subscription.remove();
   }, []);
@@ -151,6 +169,25 @@ export function AuthProvider({ children }: PropsWithChildren) {
           password,
         });
         if (error) throw new Error(error.message);
+      },
+      async signInWithGoogle() {
+        if (!supabase) throw new Error('Supabase is not configured. Use demo mode for now.');
+
+        const redirectTo = Linking.createURL('/onboarding');
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo,
+            skipBrowserRedirect: Platform.OS !== 'web',
+          },
+        });
+        if (error) throw new Error(error.message);
+
+        if (Platform.OS !== 'web') {
+          if (!data.url) throw new Error('Google sign-in could not be started.');
+          const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+          if (result.type === 'success') await consumeAuthRedirect(result.url);
+        }
       },
       async signUp(input) {
         if (!supabase) throw new Error('Supabase is not configured. Use demo mode for now.');

@@ -1,3 +1,8 @@
+-- Production safety
+-- Backup: run `supabase db dump --linked --table public.todos -f backups/202607010001.sql`.
+-- Rollback: drop the two indexes, then drop public.todos.completed_at and
+-- public.todos.sort_order. Restore the backup if historical completion times matter.
+
 alter table public.todos
 add column completed_at timestamptz,
 add column sort_order integer not null default 0;

@@ -4,7 +4,7 @@ Align Everyday is an identity-driven learning and productivity app for self-taug
 
 ## Product flow
 
-1. Create an account, confirm email, or enter the interactive demo.
+1. Create an account with a required email address, continue with Google, or enter the interactive demo.
 2. Complete the short identity and portfolio onboarding.
 3. Add a YouTube, Udemy, Coursera, or manual learning path.
 4. Turn the learning path into concrete daily alignments.
@@ -38,7 +38,13 @@ The app includes sign-in, sign-up, email recovery, protected routes, onboarding,
 
 3. Apply the SQL files in `supabase/migrations` in filename order. They create the core tables, user-profile trigger, RLS policies, and public portfolio read policies.
 
-4. Start the app:
+4. In Supabase Auth, keep Email enabled, enable **Confirm email**, and enable the
+   Google provider with the Web OAuth client ID and secret from Google Cloud. Add
+   `aligneveryday://onboarding` and the deployed web `/onboarding` URL to the
+   Supabase redirect allow list. Google Cloud's authorized redirect URI is the
+   callback URL shown on the Supabase Google provider page.
+
+5. Start the app:
 
    ```bash
    npm run start
@@ -52,6 +58,9 @@ Use “Explore with demo data” on the welcome screen to evaluate the full prod
 npm run typecheck
 npm run build
 ```
+
+Database migration, backup, rollback, and RLS test commands are documented in
+[`docs/database-operations.md`](docs/database-operations.md).
 
 `npm run build` produces the Expo web export in `dist`.
 

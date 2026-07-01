@@ -1,3 +1,9 @@
+-- Production safety
+-- Backup: run `supabase db dump --linked --data-only -f backups/202606280001.sql`
+-- before applying this migration to a project that already contains data.
+-- Rollback: destructive initial rollback; restore the backup or drop todos, courses,
+-- profiles, then public.course_status in that dependency order.
+
 create type public.course_status as enum ('backlog', 'in_progress', 'completed');
 
 create table public.profiles (

@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { AuthScaffold } from '@/components/ui/AuthScaffold';
 import { FormField } from '@/components/ui/FormField';
+import { AuthDivider, GoogleAuthButton } from '@/components/ui/GoogleAuthButton';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { getErrorMessage, useAuth } from '@/contexts/AuthContext';
 
@@ -15,7 +16,7 @@ export default function SignInScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function submit() {
-    if (!email.includes('@') || !password) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || !password) {
       setError('Enter a valid email and your password.');
       return;
     }
@@ -47,6 +48,8 @@ export default function SignInScreen() {
           <Text className="text-sm leading-5 text-red-400">{error}</Text>
         </View>
       ) : null}
+      <GoogleAuthButton onError={(message) => setError(message || null)} />
+      <AuthDivider />
       <FormField
         autoCapitalize="none"
         autoComplete="email"

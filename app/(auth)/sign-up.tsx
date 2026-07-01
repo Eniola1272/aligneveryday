@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { AuthScaffold } from '@/components/ui/AuthScaffold';
 import { FormField } from '@/components/ui/FormField';
+import { AuthDivider, GoogleAuthButton } from '@/components/ui/GoogleAuthButton';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { getErrorMessage, useAuth } from '@/contexts/AuthContext';
 
@@ -18,7 +19,9 @@ export default function SignUpScreen() {
 
   async function submit() {
     if (fullName.trim().length < 2) return setError('Tell us what to call you.');
-    if (!email.includes('@')) return setError('Enter a valid email address.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return setError('A valid email address is required.');
+    }
     if (password.length < 8) return setError('Use at least 8 characters for your password.');
 
     setError(null);
@@ -70,6 +73,8 @@ export default function SignUpScreen() {
           <Text className="text-sm leading-5 text-red-400">{error}</Text>
         </View>
       ) : null}
+      <GoogleAuthButton onError={(message) => setError(message || null)} />
+      <AuthDivider />
       <FormField
         autoComplete="name"
         label="Full name"
