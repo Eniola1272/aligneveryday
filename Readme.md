@@ -54,3 +54,15 @@ npm run build
 ```
 
 `npm run build` produces the Expo web export in `dist`.
+
+## ClickUp product planning
+
+The product backlog lives in **Eniola Aderounmu's Workspace → Team Space → Projects → Align Everyday — Product Backlog**.
+
+Codex can safely synchronize the canonical story set without creating duplicates:
+
+```bash
+node scripts/sync-clickup-backlog.mjs
+```
+
+The script reads `CLICKUP_API_TOKEN` from the ignored local `.env` file. Never prefix this credential with `EXPO_PUBLIC_` or include it in application code.
