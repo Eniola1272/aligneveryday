@@ -6,7 +6,7 @@ import { AddTodoModal } from '@/components/AddTodoModal';
 import { useProductivity } from '@/contexts/ProductivityContext';
 import { useCurrentDay } from '@/hooks/useCurrentDay';
 import type { DashboardTodo } from '@/types/learning';
-import { formatTaskDate, isAfterToday, isSameLocalDay } from '@/utils/date';
+import { formatDateRange, formatTaskDate, isAfterToday, isBeforeToday, isSameLocalDay } from '@/utils/date';
 
 type TaskFilter = 'today' | 'upcoming' | 'past';
 
@@ -16,10 +16,11 @@ function getCompletionDate(todo: DashboardTodo): string | null {
 
 function taskBelongsIn(todo: DashboardTodo, filter: TaskFilter): boolean {
   const completionDate = getCompletionDate(todo);
+  const startDate = todo.start_date ?? todo.due_date;
   if (filter === 'past') return todo.is_completed && !isSameLocalDay(completionDate);
-  if (filter === 'upcoming') return !todo.is_completed && isAfterToday(todo.due_date);
+  if (filter === 'upcoming') return !todo.is_completed && isAfterToday(startDate);
   if (todo.is_completed) return isSameLocalDay(completionDate);
-  return !todo.due_date || !isAfterToday(todo.due_date);
+  return !startDate || !isAfterToday(startDate);
 }
 
 function sortTasks(tasks: DashboardTodo[], filter: TaskFilter): DashboardTodo[] {
@@ -31,7 +32,10 @@ function sortTasks(tasks: DashboardTodo[], filter: TaskFilter): DashboardTodo[] 
       );
     }
     if (filter === 'upcoming') {
-      return new Date(first.due_date ?? 0).getTime() - new Date(second.due_date ?? 0).getTime();
+      return (
+        new Date(first.start_date ?? first.due_date ?? 0).getTime() -
+        new Date(second.start_date ?? second.due_date ?? 0).getTime()
+      );
     }
     return first.sort_order - second.sort_order;
   });
@@ -43,10 +47,10 @@ function getTaskMeta(todo: DashboardTodo, filter: TaskFilter): string {
       ? 'Completed today'
       : `Completed ${formatTaskDate(getCompletionDate(todo))}`;
   }
-  if (todo.due_date && !isSameLocalDay(todo.due_date) && !isAfterToday(todo.due_date)) {
-    return 'Rolled into today';
+  if (todo.due_date && isBeforeToday(todo.due_date)) {
+    return `Overdue · ended ${formatTaskDate(todo.due_date)}`;
   }
-  return formatTaskDate(todo.due_date);
+  return formatDateRange(todo.start_date, todo.due_date);
 }
 
 export default function AlignmentsScreen() {

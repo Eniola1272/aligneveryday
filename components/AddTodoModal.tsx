@@ -10,8 +10,10 @@ import {
   View,
 } from 'react-native';
 
+import { DateRangeCalendar } from '@/components/DateRangeCalendar';
 import type { Course } from '@/types/database';
 import type { DashboardTodo, TodoDraft } from '@/types/learning';
+import { endOfLocalDayIso, startOfLocalDayIso } from '@/utils/date';
 
 interface AddTodoModalProps {
   visible: boolean;
@@ -20,26 +22,6 @@ interface AddTodoModalProps {
   onClose: () => void;
   onAdd?: (input: TodoDraft) => Promise<unknown>;
   onUpdate?: (todoId: string, input: TodoDraft) => Promise<unknown>;
-}
-
-type DueChoice = 'today' | 'tomorrow' | 'none' | 'keep';
-
-function getDueDate(choice: DueChoice, existingDueDate: string | null): string | null {
-  if (choice === 'keep') return existingDueDate;
-  if (choice === 'none') return null;
-  const date = new Date();
-  if (choice === 'tomorrow') date.setDate(date.getDate() + 1);
-  date.setHours(18, 0, 0, 0);
-  return date.toISOString();
-}
-
-function getDueChoice(value: string | null): DueChoice {
-  if (!value) return 'none';
-  const dueDate = new Date(value);
-  if (dueDate.toDateString() === new Date().toDateString()) return 'today';
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return dueDate.toDateString() === tomorrow.toDateString() ? 'tomorrow' : 'keep';
 }
 
 export function AddTodoModal({
@@ -52,7 +34,8 @@ export function AddTodoModal({
 }: AddTodoModalProps) {
   const [title, setTitle] = useState('');
   const [courseId, setCourseId] = useState<string | null>(null);
-  const [dueChoice, setDueChoice] = useState<DueChoice>('today');
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,21 +43,31 @@ export function AddTodoModal({
     if (!visible) return;
     setTitle(todo?.task_title ?? '');
     setCourseId(todo?.course_id ?? null);
-    setDueChoice(getDueChoice(todo?.due_date ?? null));
+    const defaultStart = startOfLocalDayIso(new Date());
+    const defaultEnd = endOfLocalDayIso(new Date());
+    setStartDate(todo ? (todo.start_date ?? todo.due_date) : defaultStart);
+    setEndDate(todo ? todo.due_date : defaultEnd);
     setError(null);
   }, [todo, visible]);
 
   async function submit() {
     if (title.trim().length < 3) return setError('Make the action a little more specific.');
+    if ((startDate && !endDate) || (!startDate && endDate)) {
+      return setError('Choose both a start and end date, or choose Someday.');
+    }
+    if (startDate && endDate && new Date(endDate).getTime() < new Date(startDate).getTime()) {
+      return setError('The end date cannot be before the start date.');
+    }
     setError(null);
     setIsSubmitting(true);
     try {
-      const draft = { title, courseId, dueDate: getDueDate(dueChoice, todo?.due_date ?? null) };
+      const draft = { title, courseId, startDate, dueDate: endDate };
       if (todo) await onUpdate?.(todo.id, draft);
       else await onAdd?.(draft);
       setTitle('');
       setCourseId(null);
-      setDueChoice('today');
+      setStartDate(null);
+      setEndDate(null);
       onClose();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Unable to save alignment.');
@@ -87,7 +80,7 @@ export function AddTodoModal({
     <Modal animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent visible={visible}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-end">
         <Pressable className="absolute inset-0 bg-black/80" onPress={onClose} />
-        <View className="max-h-[85%] rounded-t-[34px] bg-surface px-6 pb-10 pt-4">
+        <View className="max-h-[94%] rounded-t-[34px] bg-surface px-6 pb-10 pt-4">
           <View className="mx-auto mb-7 h-1.5 w-16 rounded-full bg-zinc-500" />
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text className="text-3xl font-extrabold tracking-tight text-cream">
@@ -101,7 +94,6 @@ export function AddTodoModal({
 
             <Text className="mb-2 mt-7 text-sm font-semibold text-zinc-300">What will you do?</Text>
             <TextInput
-              autoFocus
               className="rounded-2xl bg-elevated px-5 py-4 text-base text-cream"
               onChangeText={setTitle}
               placeholder="e.g. Build the dashboard empty state"
@@ -132,31 +124,15 @@ export function AddTodoModal({
             </ScrollView>
 
             <Text className="mb-3 mt-7 text-sm font-semibold text-zinc-300">When?</Text>
-            <View className="flex-row gap-3">
-              {([
-                'today',
-                'tomorrow',
-                ...(dueChoice === 'keep' ? (['keep'] as const) : []),
-                'none',
-              ] as const).map((choice) => (
-                <Pressable
-                  className={`flex-1 items-center rounded-2xl px-2 py-3 ${dueChoice === choice ? 'bg-accent' : 'bg-elevated'}`}
-                  key={choice}
-                  onPress={() => setDueChoice(choice)}
-                >
-                  <Text className={`text-sm font-semibold capitalize ${dueChoice === choice ? 'text-black' : 'text-cream'}`}>
-                    {choice === 'none'
-                      ? 'Someday'
-                      : choice === 'keep'
-                        ? new Date(todo?.due_date ?? '').toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                          })
-                        : choice}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <DateRangeCalendar
+              endDate={endDate}
+              onChange={(nextStart, nextEnd) => {
+                setStartDate(nextStart);
+                setEndDate(nextEnd);
+                setError(null);
+              }}
+              startDate={startDate}
+            />
 
             <Pressable
               className={`mt-8 items-center rounded-2xl bg-accent px-6 py-5 ${isSubmitting ? 'opacity-50' : 'active:opacity-75'}`}

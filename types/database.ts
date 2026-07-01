@@ -27,6 +27,7 @@ export type Todo = {
   course_id: string | null;
   task_title: string;
   is_completed: boolean;
+  start_date: string | null;
   due_date: string | null;
   completed_at: string | null;
   sort_order: number;

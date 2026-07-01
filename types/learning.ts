@@ -18,6 +18,7 @@ export interface DashboardTodo extends Todo {
 export interface TodoDraft {
   title: string;
   courseId: string | null;
+  startDate: string | null;
   dueDate: string | null;
 }
 

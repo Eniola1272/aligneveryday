@@ -13,6 +13,7 @@ non-production project.
 | `202606290002_public_portfolios.sql` | Dump the `public` schema. | Drop both public-read policies; no data rollback is required. |
 | `202607010001_alignment_history_and_order.sql` | Dump `public.todos`. | Drop its indexes and columns; restore the dump if completion history is needed. |
 | `202607010002_auth_data_integrity.sql` | Dump `auth` and `public`. | Restore the prior `handle_new_user()` body; retain all profiles. |
+| `202607010003_task_date_ranges.sql` | Dump `public.todos`. | Drop its index and constraint, then `start_date`; existing due dates remain intact. |
 
 Suggested commands:
 

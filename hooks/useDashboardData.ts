@@ -11,7 +11,8 @@ export function useDashboardData() {
     todos: workspace.todos.filter((todo) =>
       todo.is_completed
         ? isSameLocalDay(todo.completed_at)
-        : !todo.due_date || !isAfterToday(todo.due_date),
+        : !(todo.start_date ?? todo.due_date) ||
+          !isAfterToday(todo.start_date ?? todo.due_date),
     ),
     isMockData: false,
   };

@@ -165,6 +165,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
           course_id: input.courseId,
           task_title: input.title.trim(),
           is_completed: false,
+          start_date: input.startDate,
           due_date: input.dueDate,
           completed_at: null,
           sort_order: Math.max(0, ...todos.map((todo) => todo.sort_order)) + 1000,
@@ -191,6 +192,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         const updates = {
           task_title: input.title.trim(),
           course_id: input.courseId,
+          start_date: input.startDate,
           due_date: input.dueDate,
         };
         setTodos((current) =>
