@@ -1,15 +1,17 @@
 import { useProductivity } from '@/contexts/ProductivityContext';
+import { useCurrentDay } from '@/hooks/useCurrentDay';
+import { isAfterToday, isSameLocalDay } from '@/utils/date';
 
 export function useDashboardData() {
   const workspace = useProductivity();
-  const today = new Date().toDateString();
+  useCurrentDay();
   return {
     ...workspace,
     courses: workspace.courses.filter((course) => course.status === 'in_progress'),
-    todos: workspace.todos.filter(
-      (todo) =>
-        !todo.is_completed &&
-        (!todo.due_date || new Date(todo.due_date).toDateString() === today),
+    todos: workspace.todos.filter((todo) =>
+      todo.is_completed
+        ? isSameLocalDay(todo.completed_at)
+        : !todo.due_date || !isAfterToday(todo.due_date),
     ),
     isMockData: false,
   };

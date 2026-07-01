@@ -3,6 +3,13 @@ import type { CourseWorkspace, DashboardTodo } from '@/types/learning';
 
 const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001';
 
+function atLocalHour(dayOffset: number, hour: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + dayOffset);
+  date.setHours(hour, 0, 0, 0);
+  return date.toISOString();
+}
+
 export const mockCourses: Course[] = [
   {
     id: 'nextjs-advanced',
@@ -43,7 +50,9 @@ export const mockTodos: DashboardTodo[] = [
     course_id: 'nextjs-advanced',
     task_title: 'Finish dashboard wireframe',
     is_completed: false,
-    due_date: '2026-06-28',
+    due_date: atLocalHour(0, 18),
+    completed_at: null,
+    sort_order: 1000,
     courseLabel: 'Next.js UI',
   },
   {
@@ -51,8 +60,10 @@ export const mockTodos: DashboardTodo[] = [
     user_id: MOCK_USER_ID,
     course_id: 'personal-knowledge-system',
     task_title: 'Review learning notes',
-    is_completed: false,
-    due_date: '2026-06-28',
+    is_completed: true,
+    due_date: atLocalHour(0, 18),
+    completed_at: atLocalHour(0, 11),
+    sort_order: 2000,
     courseLabel: 'PKS',
   },
   {
@@ -61,7 +72,9 @@ export const mockTodos: DashboardTodo[] = [
     course_id: 'nextjs-advanced',
     task_title: 'Refactor course progress logic',
     is_completed: false,
-    due_date: '2026-06-28',
+    due_date: atLocalHour(1, 18),
+    completed_at: null,
+    sort_order: 3000,
     courseLabel: 'Next.js UI',
   },
   {
@@ -69,8 +82,10 @@ export const mockTodos: DashboardTodo[] = [
     user_id: MOCK_USER_ID,
     course_id: null,
     task_title: 'Upload portfolio case study',
-    is_completed: false,
-    due_date: '2026-06-28',
+    is_completed: true,
+    due_date: atLocalHour(-1, 18),
+    completed_at: atLocalHour(-1, 16),
+    sort_order: 4000,
     courseLabel: 'Portfolio',
   },
   {
@@ -79,7 +94,9 @@ export const mockTodos: DashboardTodo[] = [
     course_id: 'personal-knowledge-system',
     task_title: 'Plan tomorrow’s focus block',
     is_completed: false,
-    due_date: '2026-06-28',
+    due_date: null,
+    completed_at: null,
+    sort_order: 5000,
     courseLabel: 'PKS',
   },
 ];

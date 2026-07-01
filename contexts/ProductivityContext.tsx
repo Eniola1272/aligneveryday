@@ -68,7 +68,12 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
     setError(null);
     const [coursesResult, todosResult] = await Promise.all([
       supabase.from('courses').select('*').eq('user_id', userId).order('title'),
-      supabase.from('todos').select('*').eq('user_id', userId).order('due_date'),
+      supabase
+        .from('todos')
+        .select('*')
+        .eq('user_id', userId)
+        .order('sort_order')
+        .order('due_date'),
     ]);
     setIsLoading(false);
 
@@ -161,6 +166,8 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
           task_title: input.title.trim(),
           is_completed: false,
           due_date: input.dueDate,
+          completed_at: null,
+          sort_order: Math.max(0, ...todos.map((todo) => todo.sort_order)) + 1000,
         };
 
         let todo: Todo;
@@ -212,20 +219,29 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         const target = todos.find((todo) => todo.id === todoId);
         if (!target) return;
         const nextCompleted = !target.is_completed;
+        const nextCompletedAt = nextCompleted ? new Date().toISOString() : null;
         setTodos((current) =>
           current.map((todo) =>
-            todo.id === todoId ? { ...todo, is_completed: nextCompleted } : todo,
+            todo.id === todoId
+              ? { ...todo, is_completed: nextCompleted, completed_at: nextCompletedAt }
+              : todo,
           ),
         );
         if (!isDemo && supabase) {
           const { error: mutationError } = await supabase
             .from('todos')
-            .update({ is_completed: nextCompleted })
+            .update({ is_completed: nextCompleted, completed_at: nextCompletedAt })
             .eq('id', todoId);
           if (mutationError) {
             setTodos((current) =>
               current.map((todo) =>
-                todo.id === todoId ? { ...todo, is_completed: target.is_completed } : todo,
+                todo.id === todoId
+                  ? {
+                      ...todo,
+                      is_completed: target.is_completed,
+                      completed_at: target.completed_at,
+                    }
+                  : todo,
               ),
             );
             throw new Error(mutationError.message);

@@ -28,6 +28,8 @@ export type Todo = {
   task_title: string;
   is_completed: boolean;
   due_date: string | null;
+  completed_at: string | null;
+  sort_order: number;
 };
 
 type Insertable<T extends { id: string }> = Omit<T, 'id'> & { id?: string };
