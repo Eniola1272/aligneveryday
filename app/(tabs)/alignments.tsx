@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddTodoModal } from '@/components/AddTodoModal';
@@ -93,6 +93,14 @@ export default function AlignmentsScreen() {
   }
 
   function confirmDelete(todoId: string) {
+    if (Platform.OS === 'web') {
+      const confirmed = globalThis.window?.confirm(
+        'Delete this alignment? This removes it from your learning record.',
+      );
+      if (confirmed) void deleteTodo(todoId);
+      return;
+    }
+
     Alert.alert('Delete alignment?', 'This removes the action from your learning record.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => void deleteTodo(todoId) },
