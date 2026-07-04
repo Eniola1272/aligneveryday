@@ -1,4 +1,7 @@
-export function isSameLocalDay(value: string | null, reference = new Date()): boolean {
+export function isSameLocalDay(
+  value: string | null,
+  reference = new Date(),
+): boolean {
   if (!value) return false;
   const date = new Date(value);
   return (
@@ -8,14 +11,20 @@ export function isSameLocalDay(value: string | null, reference = new Date()): bo
   );
 }
 
-export function isAfterToday(value: string | null, reference = new Date()): boolean {
+export function isAfterToday(
+  value: string | null,
+  reference = new Date(),
+): boolean {
   if (!value) return false;
   const endOfToday = new Date(reference);
   endOfToday.setHours(23, 59, 59, 999);
   return new Date(value).getTime() > endOfToday.getTime();
 }
 
-export function isBeforeToday(value: string | null, reference = new Date()): boolean {
+export function isBeforeToday(
+  value: string | null,
+  reference = new Date(),
+): boolean {
   if (!value) return false;
   const startOfToday = new Date(reference);
   startOfToday.setHours(0, 0, 0, 0);
@@ -34,8 +43,11 @@ export function endOfLocalDayIso(date: Date): string {
   return value.toISOString();
 }
 
-export function formatDateRange(start: string | null, end: string | null): string {
-  if (!start && !end) return 'No schedule';
+export function formatDateRange(
+  start: string | null,
+  end: string | null,
+): string {
+  if (!start && !end) return "No schedule";
   if (start && !end) return `${formatTaskDate(start)} → choose end`;
   if (!start && end) return `Choose start → ${formatTaskDate(end)}`;
   const startLabel = formatTaskDate(start);
@@ -44,10 +56,13 @@ export function formatDateRange(start: string | null, end: string | null): strin
 }
 
 export function formatTaskDate(value: string | null): string {
-  if (!value) return 'No deadline';
-  if (isSameLocalDay(value)) return 'Today';
+  if (!value) return "No deadline";
+  if (isSameLocalDay(value)) return "Today";
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (isSameLocalDay(value, tomorrow)) return 'Tomorrow';
-  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (isSameLocalDay(value, tomorrow)) return "Tomorrow";
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }

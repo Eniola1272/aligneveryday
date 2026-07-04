@@ -1,14 +1,27 @@
-import { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMemo, useState } from "react";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AddTodoModal } from '@/components/AddTodoModal';
-import { useProductivity } from '@/contexts/ProductivityContext';
-import { useCurrentDay } from '@/hooks/useCurrentDay';
-import type { DashboardTodo } from '@/types/learning';
-import { formatDateRange, formatTaskDate, isAfterToday, isBeforeToday, isSameLocalDay } from '@/utils/date';
+import { AddTodoModal } from "@/components/AddTodoModal";
+import { useProductivity } from "@/contexts/ProductivityContext";
+import { useCurrentDay } from "@/hooks/useCurrentDay";
+import type { DashboardTodo } from "@/types/learning";
+import {
+  formatDateRange,
+  formatTaskDate,
+  isAfterToday,
+  isBeforeToday,
+  isSameLocalDay,
+} from "@/utils/date";
 
-type TaskFilter = 'today' | 'upcoming' | 'past';
+type TaskFilter = "today" | "upcoming" | "past";
 
 function getCompletionDate(todo: DashboardTodo): string | null {
   return todo.completed_at ?? todo.due_date;
@@ -17,21 +30,26 @@ function getCompletionDate(todo: DashboardTodo): string | null {
 function taskBelongsIn(todo: DashboardTodo, filter: TaskFilter): boolean {
   const completionDate = getCompletionDate(todo);
   const startDate = todo.start_date ?? todo.due_date;
-  if (filter === 'past') return todo.is_completed && !isSameLocalDay(completionDate);
-  if (filter === 'upcoming') return !todo.is_completed && isAfterToday(startDate);
+  if (filter === "past")
+    return todo.is_completed && !isSameLocalDay(completionDate);
+  if (filter === "upcoming")
+    return !todo.is_completed && isAfterToday(startDate);
   if (todo.is_completed) return isSameLocalDay(completionDate);
   return !startDate || !isAfterToday(startDate);
 }
 
-function sortTasks(tasks: DashboardTodo[], filter: TaskFilter): DashboardTodo[] {
+function sortTasks(
+  tasks: DashboardTodo[],
+  filter: TaskFilter,
+): DashboardTodo[] {
   return [...tasks].sort((first, second) => {
-    if (filter === 'past') {
+    if (filter === "past") {
       return (
         new Date(getCompletionDate(second) ?? 0).getTime() -
         new Date(getCompletionDate(first) ?? 0).getTime()
       );
     }
-    if (filter === 'upcoming') {
+    if (filter === "upcoming") {
       return (
         new Date(first.start_date ?? first.due_date ?? 0).getTime() -
         new Date(second.start_date ?? second.due_date ?? 0).getTime()
@@ -43,8 +61,8 @@ function sortTasks(tasks: DashboardTodo[], filter: TaskFilter): DashboardTodo[] 
 
 function getTaskMeta(todo: DashboardTodo, filter: TaskFilter): string {
   if (todo.is_completed) {
-    return filter === 'today'
-      ? 'Completed today'
+    return filter === "today"
+      ? "Completed today"
       : `Completed ${formatTaskDate(getCompletionDate(todo))}`;
   }
   if (todo.due_date && isBeforeToday(todo.due_date)) {
@@ -64,13 +82,17 @@ export default function AlignmentsScreen() {
     error,
     refresh,
   } = useProductivity();
-  const [filter, setFilter] = useState<TaskFilter>('today');
+  const [filter, setFilter] = useState<TaskFilter>("today");
   const currentDay = useCurrentDay();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<DashboardTodo | null>(null);
 
   const visibleTodos = useMemo(
-    () => sortTasks(todos.filter((todo) => taskBelongsIn(todo, filter)), filter),
+    () =>
+      sortTasks(
+        todos.filter((todo) => taskBelongsIn(todo, filter)),
+        filter,
+      ),
     [currentDay, filter, todos],
   );
   const completedTodayCount = todos.filter(
@@ -93,29 +115,39 @@ export default function AlignmentsScreen() {
   }
 
   function confirmDelete(todoId: string) {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       const confirmed = globalThis.window?.confirm(
-        'Delete this alignment? This removes it from your learning record.',
+        "Delete this alignment? This removes it from your learning record.",
       );
       if (confirmed) void deleteTodo(todoId);
       return;
     }
 
-    Alert.alert('Delete alignment?', 'This removes the action from your learning record.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => void deleteTodo(todoId) },
-    ]);
+    Alert.alert(
+      "Delete alignment?",
+      "This removes the action from your learning record.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => void deleteTodo(todoId),
+        },
+      ],
+    );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-ink" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-ink" edges={["top"]}>
       <ScrollView
         contentContainerClassName="px-6 pb-32 pt-8"
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-row items-start justify-between">
           <View className="min-w-0 flex-1 pr-4">
-            <Text className="text-xs font-bold tracking-[3px] text-accent">PRODUCTIVITY</Text>
+            <Text className="text-xs font-bold tracking-[3px] text-accent">
+              PRODUCTIVITY
+            </Text>
             <Text className="mt-3 text-4xl font-extrabold tracking-tight text-cream">
               Alignments.
             </Text>
@@ -133,17 +165,17 @@ export default function AlignmentsScreen() {
         </View>
 
         <View className="mt-8 flex-row rounded-2xl bg-surface p-1.5">
-          {(['today', 'upcoming', 'past'] as const).map((item) => (
+          {(["today", "upcoming", "past"] as const).map((item) => (
             <Pressable
               className={`flex-1 items-center rounded-xl py-3 ${
-                filter === item ? 'bg-elevated' : ''
+                filter === item ? "bg-elevated" : ""
               }`}
               key={item}
               onPress={() => setFilter(item)}
             >
               <Text
                 className={`text-xs font-semibold capitalize ${
-                  filter === item ? 'text-accent' : 'text-muted'
+                  filter === item ? "text-accent" : "text-muted"
                 }`}
               >
                 {item}
@@ -169,15 +201,17 @@ export default function AlignmentsScreen() {
               accessibilityHint="Opens this alignment for editing"
               accessibilityRole="button"
               className={`flex-row items-center rounded-[28px] p-5 active:bg-elevated ${
-                todo.is_completed ? 'bg-[#141414]' : 'bg-surface'
+                todo.is_completed ? "bg-[#141414]" : "bg-surface"
               }`}
               key={todo.id}
               onPress={() => openEditModal(todo)}
             >
               <Pressable
-                accessibilityLabel={todo.is_completed ? 'Mark incomplete' : 'Mark complete'}
+                accessibilityLabel={`${todo.task_title}: ${
+                  todo.is_completed ? "Mark incomplete" : "Mark complete"
+                }`}
                 className={`mr-4 h-11 w-11 items-center justify-center rounded-full ${
-                  todo.is_completed ? 'bg-accent' : 'border-2 border-zinc-600'
+                  todo.is_completed ? "bg-accent" : "border-2 border-zinc-600"
                 }`}
                 onPress={(event) => {
                   event.stopPropagation();
@@ -192,7 +226,9 @@ export default function AlignmentsScreen() {
               <View className="min-w-0 flex-1">
                 <Text
                   className={`text-lg font-semibold leading-6 ${
-                    todo.is_completed ? 'text-zinc-500 line-through' : 'text-cream'
+                    todo.is_completed
+                      ? "text-zinc-500 line-through"
+                      : "text-cream"
                   }`}
                 >
                   {todo.task_title}
@@ -203,7 +239,9 @@ export default function AlignmentsScreen() {
                       {todo.courseLabel}
                     </Text>
                   ) : null}
-                  <Text className="text-sm text-muted">{getTaskMeta(todo, filter)}</Text>
+                  <Text className="text-sm text-muted">
+                    {getTaskMeta(todo, filter)}
+                  </Text>
                 </View>
               </View>
 
@@ -231,13 +269,16 @@ export default function AlignmentsScreen() {
           ))}
         </View>
 
-        {filter === 'today' && completedTodayCount > 0 ? (
+        {filter === "today" && completedTodayCount > 0 ? (
           <View className="mt-5 rounded-2xl bg-[#2C210D] px-5 py-4">
             <Text className="font-bold text-accent">
-              {completedTodayCount} {completedTodayCount === 1 ? 'alignment' : 'alignments'} done
+              {completedTodayCount}{" "}
+              {completedTodayCount === 1 ? "alignment" : "alignments"} done
               today.
             </Text>
-            <Text className="mt-1 text-sm text-zinc-300">That work counts. Let it feel good.</Text>
+            <Text className="mt-1 text-sm text-zinc-300">
+              That work counts. Let it feel good.
+            </Text>
           </View>
         ) : null}
 
@@ -245,18 +286,18 @@ export default function AlignmentsScreen() {
           <View className="mt-8 rounded-[28px] bg-surface p-7">
             <Text className="text-3xl text-accent">✓</Text>
             <Text className="mt-4 text-xl font-bold text-cream">
-              {filter === 'past'
-                ? 'No completed history yet.'
-                : filter === 'upcoming'
-                  ? 'Nothing waiting ahead.'
-                  : 'Clear runway.'}
+              {filter === "past"
+                ? "No completed history yet."
+                : filter === "upcoming"
+                  ? "Nothing waiting ahead."
+                  : "Clear runway."}
             </Text>
             <Text className="mt-2 text-base leading-6 text-muted">
-              {filter === 'today'
-                ? 'Add one useful action, or enjoy the space you created.'
-                : filter === 'upcoming'
-                  ? 'Future alignments will collect here when you schedule them.'
-                  : 'Completed alignments move here the day after you finish them.'}
+              {filter === "today"
+                ? "Add one useful action, or enjoy the space you created."
+                : filter === "upcoming"
+                  ? "Future alignments will collect here when you schedule them."
+                  : "Completed alignments move here the day after you finish them."}
             </Text>
           </View>
         ) : null}

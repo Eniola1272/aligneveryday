@@ -1,19 +1,19 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from "react-native";
 
-import { ProgressBar } from '@/components/ProgressBar';
-import type { Course } from '@/types/database';
-import { getProgressPercentage } from '@/utils/time';
+import { ProgressBar } from "@/components/ProgressBar";
+import type { Course } from "@/types/database";
+import { getProgressPercentage } from "@/utils/time";
 
 interface CourseCardProps {
   course: Course;
   onPress: () => void;
 }
 
-const platformGlyph: Record<Course['platform'], string> = {
-  YouTube: 'N',
-  Udemy: '✦',
-  Coursera: 'C',
-  Custom: 'A',
+const platformGlyph: Record<Course["platform"], string> = {
+  YouTube: "N",
+  Udemy: "✦",
+  Coursera: "C",
+  Custom: "A",
 };
 
 export function CourseCard({ course, onPress }: CourseCardProps) {
@@ -30,10 +30,15 @@ export function CourseCard({ course, onPress }: CourseCardProps) {
       onPress={onPress}
     >
       <View className="h-12 w-12 items-center justify-center rounded-2xl bg-[#382600]">
-        <Text className="text-xl font-semibold text-accent">{platformGlyph[course.platform]}</Text>
+        <Text className="text-xl font-semibold text-accent">
+          {platformGlyph[course.platform]}
+        </Text>
       </View>
 
-      <Text className="mt-5 text-2xl font-bold leading-7 tracking-tight text-cream" numberOfLines={2}>
+      <Text
+        className="mt-5 text-2xl font-bold leading-7 tracking-tight text-cream"
+        numberOfLines={2}
+      >
         {course.title}
       </Text>
 

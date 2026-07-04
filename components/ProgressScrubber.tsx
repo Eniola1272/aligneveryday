@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   type AccessibilityActionEvent,
   type GestureResponderEvent,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { clampPercentage } from '@/utils/time';
+import { clampPercentage } from "@/utils/time";
 
 interface ProgressScrubberProps {
   progress: number;
@@ -21,17 +21,19 @@ export function ProgressScrubber({
 
   function updateFromTouch(event: GestureResponderEvent) {
     if (trackWidth <= 0) return;
-    onProgressChange(clampPercentage((event.nativeEvent.locationX / trackWidth) * 100));
+    onProgressChange(
+      clampPercentage((event.nativeEvent.locationX / trackWidth) * 100),
+    );
   }
 
   function handleAccessibilityAction(event: AccessibilityActionEvent) {
-    const delta = event.nativeEvent.actionName === 'increment' ? 5 : -5;
+    const delta = event.nativeEvent.actionName === "increment" ? 5 : -5;
     onProgressChange(clampPercentage(safeProgress + delta));
   }
 
   return (
     <View
-      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
       accessibilityLabel="Course progress"
       accessibilityRole="adjustable"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(safeProgress) }}

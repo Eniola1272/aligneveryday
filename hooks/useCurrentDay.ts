@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export function useCurrentDay(): string {
   const [day, setDay] = useState(() => new Date().toDateString());

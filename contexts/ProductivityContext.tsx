@@ -5,13 +5,13 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react';
+} from "react";
 
-import { mockCourses, mockTodos } from '@/data/mock';
-import { supabase } from '@/lib/supabase';
-import type { Course, CourseStatus, Todo } from '@/types/database';
-import type { AddShelfDraft, DashboardTodo, TodoDraft } from '@/types/learning';
-import { useAuth } from '@/contexts/AuthContext';
+import { mockCourses, mockTodos } from "@/data/mock";
+import { supabase } from "@/lib/supabase";
+import type { Course, CourseStatus, Todo } from "@/types/database";
+import type { AddShelfDraft, DashboardTodo, TodoDraft } from "@/types/learning";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductivityContextValue {
   courses: Course[];
@@ -29,15 +29,22 @@ interface ProductivityContextValue {
   refresh: () => Promise<void>;
 }
 
-const ProductivityContext = createContext<ProductivityContextValue | null>(null);
+const ProductivityContext = createContext<ProductivityContextValue | null>(
+  null,
+);
 
 function withCourseLabels(courses: Course[], todos: Todo[]): DashboardTodo[] {
   const labels = new Map(
-    courses.map((course) => [course.id, course.title.split(' ').slice(0, 3).join(' ')]),
+    courses.map((course) => [
+      course.id,
+      course.title.split(" ").slice(0, 3).join(" "),
+    ]),
   );
   return todos.map((todo) => ({
     ...todo,
-    courseLabel: todo.course_id ? (labels.get(todo.course_id) ?? 'Course') : null,
+    courseLabel: todo.course_id
+      ? (labels.get(todo.course_id) ?? "Course")
+      : null,
   }));
 }
 
@@ -67,18 +74,22 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
     setIsLoading(true);
     setError(null);
     const [coursesResult, todosResult] = await Promise.all([
-      supabase.from('courses').select('*').eq('user_id', userId).order('title'),
+      supabase.from("courses").select("*").eq("user_id", userId).order("title"),
       supabase
-        .from('todos')
-        .select('*')
-        .eq('user_id', userId)
-        .order('sort_order')
-        .order('due_date'),
+        .from("todos")
+        .select("*")
+        .eq("user_id", userId)
+        .order("sort_order")
+        .order("due_date"),
     ]);
     setIsLoading(false);
 
     if (coursesResult.error || todosResult.error) {
-      setError(coursesResult.error?.message ?? todosResult.error?.message ?? 'Unable to load workspace.');
+      setError(
+        coursesResult.error?.message ??
+          todosResult.error?.message ??
+          "Unable to load workspace.",
+      );
       return;
     }
 
@@ -98,7 +109,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
       isLoading,
       error,
       async addCourse(draft) {
-        if (!userId) throw new Error('Sign in to add a course.');
+        if (!userId) throw new Error("Sign in to add a course.");
         const courseInput = {
           user_id: userId,
           title: draft.title.trim(),
@@ -110,15 +121,18 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         };
 
         if (isDemo || !supabase) {
-          const course: Course = { id: `demo-course-${Date.now()}`, ...courseInput };
+          const course: Course = {
+            id: `demo-course-${Date.now()}`,
+            ...courseInput,
+          };
           setCourses((current) => [course, ...current]);
           return course;
         }
 
         const { data, error: mutationError } = await supabase
-          .from('courses')
+          .from("courses")
           .insert(courseInput)
-          .select('*')
+          .select("*")
           .single();
         if (mutationError) throw new Error(mutationError.message);
         setCourses((current) => [data, ...current]);
@@ -126,7 +140,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
       },
       async updateCourse(courseId, draft) {
         const target = courses.find((course) => course.id === courseId);
-        if (!target) throw new Error('That course could not be found.');
+        if (!target) throw new Error("That course could not be found.");
         const updates = {
           title: draft.title.trim(),
           platform: draft.platform,
@@ -140,17 +154,23 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         };
         const previous = courses;
         setCourses((current) =>
-          current.map((course) => (course.id === courseId ? { ...course, ...updates } : course)),
+          current.map((course) =>
+            course.id === courseId ? { ...course, ...updates } : course,
+          ),
         );
-        setTodos((current) => withCourseLabels(
-          courses.map((course) => (course.id === courseId ? { ...course, ...updates } : course)),
-          current,
-        ));
+        setTodos((current) =>
+          withCourseLabels(
+            courses.map((course) =>
+              course.id === courseId ? { ...course, ...updates } : course,
+            ),
+            current,
+          ),
+        );
         if (!isDemo && supabase) {
           const { error: mutationError } = await supabase
-            .from('courses')
+            .from("courses")
             .update(updates)
-            .eq('id', courseId);
+            .eq("id", courseId);
           if (mutationError) {
             setCourses(previous);
             setTodos((current) => withCourseLabels(previous, current));
@@ -159,7 +179,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         }
       },
       async addTodo(input) {
-        if (!userId) throw new Error('Sign in to add an alignment.');
+        if (!userId) throw new Error("Sign in to add an alignment.");
         const todoInput = {
           user_id: userId,
           course_id: input.courseId,
@@ -168,7 +188,8 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
           start_date: input.startDate,
           due_date: input.dueDate,
           completed_at: null,
-          sort_order: Math.max(0, ...todos.map((todo) => todo.sort_order)) + 1000,
+          sort_order:
+            Math.max(0, ...todos.map((todo) => todo.sort_order)) + 1000,
         };
 
         let todo: Todo;
@@ -176,9 +197,9 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
           todo = { id: `demo-todo-${Date.now()}`, ...todoInput };
         } else {
           const { data, error: mutationError } = await supabase
-            .from('todos')
+            .from("todos")
             .insert(todoInput)
-            .select('*')
+            .select("*")
             .single();
           if (mutationError) throw new Error(mutationError.message);
           todo = data;
@@ -188,7 +209,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
       },
       async updateTodo(todoId, input) {
         const target = todos.find((todo) => todo.id === todoId);
-        if (!target) throw new Error('That alignment could not be found.');
+        if (!target) throw new Error("That alignment could not be found.");
         const updates = {
           task_title: input.title.trim(),
           course_id: input.courseId,
@@ -198,14 +219,16 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         setTodos((current) =>
           withCourseLabels(
             courses,
-            current.map((todo) => (todo.id === todoId ? { ...todo, ...updates } : todo)),
+            current.map((todo) =>
+              todo.id === todoId ? { ...todo, ...updates } : todo,
+            ),
           ),
         );
         if (!isDemo && supabase) {
           const { error: mutationError } = await supabase
-            .from('todos')
+            .from("todos")
             .update(updates)
-            .eq('id', todoId);
+            .eq("id", todoId);
           if (mutationError) {
             setTodos((current) =>
               withCourseLabels(
@@ -225,15 +248,22 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         setTodos((current) =>
           current.map((todo) =>
             todo.id === todoId
-              ? { ...todo, is_completed: nextCompleted, completed_at: nextCompletedAt }
+              ? {
+                  ...todo,
+                  is_completed: nextCompleted,
+                  completed_at: nextCompletedAt,
+                }
               : todo,
           ),
         );
         if (!isDemo && supabase) {
           const { error: mutationError } = await supabase
-            .from('todos')
-            .update({ is_completed: nextCompleted, completed_at: nextCompletedAt })
-            .eq('id', todoId);
+            .from("todos")
+            .update({
+              is_completed: nextCompleted,
+              completed_at: nextCompletedAt,
+            })
+            .eq("id", todoId);
           if (mutationError) {
             setTodos((current) =>
               current.map((todo) =>
@@ -254,7 +284,10 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
         const previous = todos;
         setTodos((current) => current.filter((todo) => todo.id !== todoId));
         if (!isDemo && supabase) {
-          const { error: mutationError } = await supabase.from('todos').delete().eq('id', todoId);
+          const { error: mutationError } = await supabase
+            .from("todos")
+            .delete()
+            .eq("id", todoId);
           if (mutationError) {
             setTodos(previous);
             throw new Error(mutationError.message);
@@ -264,29 +297,36 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
       async updateCourseProgress(courseId, seconds) {
         const target = courses.find((course) => course.id === courseId);
         if (!target) return;
-        const safeSeconds = Math.min(target.total_duration_sec, Math.max(0, Math.round(seconds)));
+        const safeSeconds = Math.min(
+          target.total_duration_sec,
+          Math.max(0, Math.round(seconds)),
+        );
         setCourses((current) =>
           current.map((course) =>
-            course.id === courseId ? { ...course, current_progress_sec: safeSeconds } : course,
+            course.id === courseId
+              ? { ...course, current_progress_sec: safeSeconds }
+              : course,
           ),
         );
         if (!isDemo && supabase) {
           const { error: mutationError } = await supabase
-            .from('courses')
+            .from("courses")
             .update({ current_progress_sec: safeSeconds })
-            .eq('id', courseId);
+            .eq("id", courseId);
           if (mutationError) throw new Error(mutationError.message);
         }
       },
       async updateCourseStatus(courseId, status) {
         setCourses((current) =>
-          current.map((course) => (course.id === courseId ? { ...course, status } : course)),
+          current.map((course) =>
+            course.id === courseId ? { ...course, status } : course,
+          ),
         );
         if (!isDemo && supabase) {
           const { error: mutationError } = await supabase
-            .from('courses')
+            .from("courses")
             .update({ status })
-            .eq('id', courseId);
+            .eq("id", courseId);
           if (mutationError) throw new Error(mutationError.message);
         }
       },
@@ -295,11 +335,18 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
     [courses, error, isDemo, isLoading, todos, userId],
   );
 
-  return <ProductivityContext.Provider value={value}>{children}</ProductivityContext.Provider>;
+  return (
+    <ProductivityContext.Provider value={value}>
+      {children}
+    </ProductivityContext.Provider>
+  );
 }
 
 export function useProductivity(): ProductivityContextValue {
   const context = useContext(ProductivityContext);
-  if (!context) throw new Error('useProductivity must be used inside ProductivityProvider.');
+  if (!context)
+    throw new Error(
+      "useProductivity must be used inside ProductivityProvider.",
+    );
   return context;
 }

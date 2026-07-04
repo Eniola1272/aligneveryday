@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
-import { getErrorMessage, useAuth } from '@/contexts/AuthContext';
+import { getErrorMessage, useAuth } from "@/contexts/AuthContext";
 
 interface GoogleAuthButtonProps {
   onError: (message: string) => void;
@@ -12,7 +12,7 @@ export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   async function submit() {
-    onError('');
+    onError("");
     setIsLoading(true);
     try {
       await signInWithGoogle();
@@ -38,7 +38,9 @@ export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
           <View className="mr-3 h-7 w-7 items-center justify-center rounded-full bg-cream">
             <Text className="text-base font-black text-[#4285F4]">G</Text>
           </View>
-          <Text className="text-base font-bold text-cream">Continue with Google</Text>
+          <Text className="text-base font-bold text-cream">
+            Continue with Google
+          </Text>
         </>
       )}
     </Pressable>
@@ -49,7 +51,9 @@ export function AuthDivider() {
   return (
     <View className="my-6 flex-row items-center">
       <View className="h-px flex-1 bg-white/10" />
-      <Text className="px-4 text-xs font-semibold uppercase tracking-widest text-muted">or email</Text>
+      <Text className="px-4 text-xs font-semibold uppercase tracking-widest text-muted">
+        or email
+      </Text>
       <View className="h-px flex-1 bg-white/10" />
     </View>
   );

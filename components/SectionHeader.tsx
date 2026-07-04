@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from "react-native";
 
 interface SectionHeaderProps {
   title: string;
@@ -16,7 +16,9 @@ export function SectionHeader({
   return (
     <View className="mb-5 flex-row items-end justify-between">
       <View className="flex-1 pr-4">
-        <Text className="text-2xl font-bold tracking-tight text-cream">{title}</Text>
+        <Text className="text-2xl font-bold tracking-tight text-cream">
+          {title}
+        </Text>
         <Text className="mt-1 text-base text-muted">{subtitle}</Text>
       </View>
       <Pressable

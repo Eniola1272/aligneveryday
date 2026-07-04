@@ -1,10 +1,15 @@
-import type { Course, CourseStatus, LearningPlatform, Todo } from '@/types/database';
+import type {
+  Course,
+  CourseStatus,
+  LearningPlatform,
+  Todo,
+} from "@/types/database";
 
 export interface CourseMilestone {
   id: string;
   title: string;
   meta: string;
-  state: 'completed' | 'current' | 'upcoming';
+  state: "completed" | "current" | "upcoming";
 }
 
 export interface CourseWorkspace extends Course {

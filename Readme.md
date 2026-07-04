@@ -55,14 +55,20 @@ Use “Explore with demo data” on the welcome screen to evaluate the full prod
 ## Validation
 
 ```bash
+npm run format:check
 npm run typecheck
+npm run expo:check
 npm run build
+npm run test:e2e
 ```
 
 Database migration, backup, rollback, and RLS test commands are documented in
 [`docs/database-operations.md`](docs/database-operations.md).
 
 `npm run build` produces the Expo web export in `dist`.
+The Playwright suite uses deterministic mocked authentication and demo data; it
+does not create users or mutate records in your Supabase project. Pull requests
+and pushes to `main` run all quality gates in GitHub Actions.
 
 ## ClickUp product planning
 

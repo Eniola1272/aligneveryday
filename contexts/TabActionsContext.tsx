@@ -1,4 +1,4 @@
-import { createContext, type PropsWithChildren, useContext } from 'react';
+import { createContext, type PropsWithChildren, useContext } from "react";
 
 interface TabActionsContextValue {
   openAddCourse: () => void;
@@ -19,6 +19,7 @@ export function TabActionsProvider({
 
 export function useTabActions() {
   const context = useContext(TabActionsContext);
-  if (!context) throw new Error('useTabActions must be used inside TabActionsProvider.');
+  if (!context)
+    throw new Error("useTabActions must be used inside TabActionsProvider.");
   return context;
 }

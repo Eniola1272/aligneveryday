@@ -1,0 +1,8 @@
+node_modules
+.expo
+dist
+playwright-report
+test-results
+package-lock.json
+supabase/migrations
+supabase/tests

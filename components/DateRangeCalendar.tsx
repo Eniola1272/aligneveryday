@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
 import {
   endOfLocalDayIso,
   formatDateRange,
   formatTaskDate,
   startOfLocalDayIso,
-} from '@/utils/date';
+} from "@/utils/date";
 
 interface DateRangeCalendarProps {
   startDate: string | null;
@@ -14,7 +14,7 @@ interface DateRangeCalendarProps {
   onChange: (startDate: string | null, endDate: string | null) => void;
 }
 
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function sameDay(first: Date, second: Date): boolean {
   return (
@@ -35,7 +35,11 @@ function calendarDays(month: Date): Date[] {
   });
 }
 
-export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCalendarProps) {
+export function DateRangeCalendar({
+  startDate,
+  endDate,
+  onChange,
+}: DateRangeCalendarProps) {
   const initialDate = startDate ? new Date(startDate) : new Date();
   const [visibleMonth, setVisibleMonth] = useState(
     new Date(initialDate.getFullYear(), initialDate.getMonth(), 1),
@@ -52,7 +56,11 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
   const selectedEnd = endDate ? new Date(endDate) : null;
 
   function selectDay(day: Date) {
-    if (!selectedStart || selectedEnd || day.getTime() < selectedStart.getTime()) {
+    if (
+      !selectedStart ||
+      selectedEnd ||
+      day.getTime() < selectedStart.getTime()
+    ) {
       onChange(startOfLocalDayIso(day), null);
       return;
     }
@@ -67,7 +75,8 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
 
   function moveMonth(offset: number) {
     setVisibleMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() + offset, 1),
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() + offset, 1),
     );
   }
 
@@ -75,7 +84,9 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
     <View className="rounded-[28px] bg-elevated p-4">
       <View className="flex-row items-center justify-between px-1">
         <View>
-          <Text className="text-xs font-bold uppercase tracking-[2px] text-accent">Schedule</Text>
+          <Text className="text-xs font-bold uppercase tracking-[2px] text-accent">
+            Schedule
+          </Text>
           <Text className="mt-1 text-base font-bold text-cream">
             {formatDateRange(startDate, endDate)}
           </Text>
@@ -100,26 +111,36 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
 
       <View className="mt-4 flex-row gap-3">
         <View className="flex-1 rounded-2xl bg-surface px-4 py-3">
-          <Text className="text-[10px] font-bold uppercase tracking-[2px] text-muted">Starts</Text>
+          <Text className="text-[10px] font-bold uppercase tracking-[2px] text-muted">
+            Starts
+          </Text>
           <Text className="mt-1 text-sm font-bold text-cream">
-            {startDate ? formatTaskDate(startDate) : 'Not set'}
+            {startDate ? formatTaskDate(startDate) : "Not set"}
           </Text>
         </View>
         <View className="flex-1 rounded-2xl bg-surface px-4 py-3">
-          <Text className="text-[10px] font-bold uppercase tracking-[2px] text-muted">Ends</Text>
+          <Text className="text-[10px] font-bold uppercase tracking-[2px] text-muted">
+            Ends
+          </Text>
           <Text className="mt-1 text-sm font-bold text-cream">
-            {endDate ? formatTaskDate(endDate) : 'Choose date'}
+            {endDate ? formatTaskDate(endDate) : "Choose date"}
           </Text>
         </View>
       </View>
 
       <Text className="mt-5 text-center text-lg font-extrabold text-cream">
-        {visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+        {visibleMonth.toLocaleDateString(undefined, {
+          month: "long",
+          year: "numeric",
+        })}
       </Text>
 
       <View className="mt-4 flex-row">
         {WEEKDAYS.map((weekday, index) => (
-          <View className="w-[14.285%] items-center" key={`${weekday}-${index}`}>
+          <View
+            className="w-[14.285%] items-center"
+            key={`${weekday}-${index}`}
+          >
             <Text className="text-xs font-bold text-zinc-500">{weekday}</Text>
           </View>
         ))}
@@ -131,9 +152,9 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
           const isEnd = Boolean(selectedEnd && sameDay(day, selectedEnd));
           const isInRange = Boolean(
             selectedStart &&
-              selectedEnd &&
-              day.getTime() > selectedStart.getTime() &&
-              day.getTime() < selectedEnd.getTime(),
+            selectedEnd &&
+            day.getTime() > selectedStart.getTime() &&
+            day.getTime() < selectedEnd.getTime(),
           );
           const isCurrentMonth = day.getMonth() === visibleMonth.getMonth();
           const isToday = sameDay(day, new Date());
@@ -141,26 +162,26 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
           return (
             <View
               className={`h-11 w-[14.285%] items-center justify-center ${
-                isInRange ? 'bg-[#342610]' : ''
+                isInRange ? "bg-[#342610]" : ""
               }`}
               key={day.toISOString()}
             >
               <Pressable
                 accessibilityLabel={day.toLocaleDateString()}
                 className={`h-10 w-10 items-center justify-center rounded-full ${
-                  isStart || isEnd ? 'bg-accent' : 'active:bg-surface'
+                  isStart || isEnd ? "bg-accent" : "active:bg-surface"
                 }`}
                 onPress={() => selectDay(day)}
               >
                 <Text
                   className={`text-sm font-semibold ${
                     isStart || isEnd
-                      ? 'text-black'
+                      ? "text-black"
                       : isToday
-                        ? 'text-accent'
+                        ? "text-accent"
                         : isCurrentMonth
-                          ? 'text-cream'
-                          : 'text-zinc-600'
+                          ? "text-cream"
+                          : "text-zinc-600"
                   }`}
                 >
                   {day.getDate()}
@@ -172,17 +193,28 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: DateRangeCal
       </View>
 
       <Text className="mt-3 text-center text-xs leading-5 text-muted">
-        {startDate && !endDate ? 'Now choose the end date.' : 'Choose a start date, then an end date.'}
+        {startDate && !endDate
+          ? "Now choose the end date."
+          : "Choose a start date, then an end date."}
       </Text>
 
       <View className="mt-4 flex-row gap-2">
-        <Pressable className="flex-1 items-center rounded-xl bg-surface py-3" onPress={() => selectPreset(0)}>
+        <Pressable
+          className="flex-1 items-center rounded-xl bg-surface py-3"
+          onPress={() => selectPreset(0)}
+        >
           <Text className="text-sm font-bold text-cream">Today</Text>
         </Pressable>
-        <Pressable className="flex-1 items-center rounded-xl bg-surface py-3" onPress={() => selectPreset(1)}>
+        <Pressable
+          className="flex-1 items-center rounded-xl bg-surface py-3"
+          onPress={() => selectPreset(1)}
+        >
           <Text className="text-sm font-bold text-cream">Tomorrow</Text>
         </Pressable>
-        <Pressable className="flex-1 items-center rounded-xl bg-surface py-3" onPress={() => onChange(null, null)}>
+        <Pressable
+          className="flex-1 items-center rounded-xl bg-surface py-3"
+          onPress={() => onChange(null, null)}
+        >
           <Text className="text-sm font-bold text-muted">Someday</Text>
         </Pressable>
       </View>

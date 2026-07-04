@@ -1,23 +1,26 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { router } from "expo-router";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
-import { AuthScaffold } from '@/components/ui/AuthScaffold';
-import { FormField } from '@/components/ui/FormField';
-import { AuthDivider, GoogleAuthButton } from '@/components/ui/GoogleAuthButton';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
-import { getErrorMessage, useAuth } from '@/contexts/AuthContext';
+import { AuthScaffold } from "@/components/ui/AuthScaffold";
+import { FormField } from "@/components/ui/FormField";
+import {
+  AuthDivider,
+  GoogleAuthButton,
+} from "@/components/ui/GoogleAuthButton";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { getErrorMessage, useAuth } from "@/contexts/AuthContext";
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function submit() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || !password) {
-      setError('Enter a valid email and your password.');
+      setError("Enter a valid email and your password.");
       return;
     }
     setError(null);
@@ -34,9 +37,13 @@ export default function SignInScreen() {
   return (
     <AuthScaffold
       footer={
-        <Pressable className="items-center py-3" onPress={() => router.replace('/sign-up')}>
+        <Pressable
+          className="items-center py-3"
+          onPress={() => router.replace("/sign-up")}
+        >
           <Text className="text-sm text-muted">
-            New here? <Text className="font-bold text-accent">Create an account</Text>
+            New here?{" "}
+            <Text className="font-bold text-accent">Create an account</Text>
           </Text>
         </Pressable>
       }
@@ -69,10 +76,19 @@ export default function SignInScreen() {
         secureTextEntry
         value={password}
       />
-      <Pressable className="mb-7 self-end py-1" onPress={() => router.push('/forgot-password')}>
-        <Text className="text-sm font-semibold text-accent">Forgot password?</Text>
+      <Pressable
+        className="mb-7 self-end py-1"
+        onPress={() => router.push("/forgot-password")}
+      >
+        <Text className="text-sm font-semibold text-accent">
+          Forgot password?
+        </Text>
       </Pressable>
-      <PrimaryButton isLoading={isSubmitting} label="Sign in" onPress={submit} />
+      <PrimaryButton
+        isLoading={isSubmitting}
+        label="Sign in"
+        onPress={submit}
+      />
     </AuthScaffold>
   );
 }

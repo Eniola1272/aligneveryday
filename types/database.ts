@@ -1,5 +1,5 @@
-export type CourseStatus = 'backlog' | 'in_progress' | 'completed';
-export type LearningPlatform = 'YouTube' | 'Udemy' | 'Coursera' | 'Custom';
+export type CourseStatus = "backlog" | "in_progress" | "completed";
+export type LearningPlatform = "YouTube" | "Udemy" | "Coursera" | "Custom";
 
 export type Profile = {
   id: string;
@@ -33,7 +33,7 @@ export type Todo = {
   sort_order: number;
 };
 
-type Insertable<T extends { id: string }> = Omit<T, 'id'> & { id?: string };
+type Insertable<T extends { id: string }> = Omit<T, "id"> & { id?: string };
 type Updatable<T> = Partial<T>;
 
 export type Database = {
@@ -51,11 +51,11 @@ export type Database = {
         Update: Updatable<Course>;
         Relationships: [
           {
-            foreignKeyName: 'courses_user_id_fkey';
-            columns: ['user_id'];
+            foreignKeyName: "courses_user_id_fkey";
+            columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -65,18 +65,18 @@ export type Database = {
         Update: Updatable<Todo>;
         Relationships: [
           {
-            foreignKeyName: 'todos_user_id_fkey';
-            columns: ['user_id'];
+            foreignKeyName: "todos_user_id_fkey";
+            columns: ["user_id"];
             isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: 'todos_course_id_fkey';
-            columns: ['course_id'];
+            foreignKeyName: "todos_course_id_fkey";
+            columns: ["course_id"];
             isOneToOne: false;
-            referencedRelation: 'courses';
-            referencedColumns: ['id'];
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
           },
         ];
       };

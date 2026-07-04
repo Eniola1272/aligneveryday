@@ -1,13 +1,17 @@
-import { Tabs } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Tabs } from "expo-router";
+import { useState } from "react";
+import { Pressable, Text } from "react-native";
 
-import AddShelfModal from '@/app/components/AddShelfModal';
-import { useProductivity } from '@/contexts/ProductivityContext';
-import { TabActionsProvider } from '@/contexts/TabActionsContext';
+import AddShelfModal from "@/app/components/AddShelfModal";
+import { useProductivity } from "@/contexts/ProductivityContext";
+import { TabActionsProvider } from "@/contexts/TabActionsContext";
 
 function TabGlyph({ glyph, active }: { glyph: string; active: boolean }) {
-  return <Text className={`text-xl ${active ? 'text-accent' : 'text-zinc-600'}`}>{glyph}</Text>;
+  return (
+    <Text className={`text-xl ${active ? "text-accent" : "text-zinc-600"}`}>
+      {glyph}
+    </Text>
+  );
 }
 
 export default function TabLayout() {
@@ -19,12 +23,12 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          sceneStyle: { backgroundColor: '#0A0A0A' },
-          tabBarActiveTintColor: '#FF9D00',
-          tabBarInactiveTintColor: '#66666A',
-          tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 1 },
+          sceneStyle: { backgroundColor: "#0A0A0A" },
+          tabBarActiveTintColor: "#FF9D00",
+          tabBarInactiveTintColor: "#66666A",
+          tabBarLabelStyle: { fontSize: 10, fontWeight: "600", marginTop: 1 },
           tabBarStyle: {
-            backgroundColor: '#0A0A0A',
+            backgroundColor: "#0A0A0A",
             borderTopWidth: 0,
             height: 88,
             paddingBottom: 18,
@@ -32,13 +36,29 @@ export default function TabLayout() {
           },
         }}
       >
-        <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: ({ focused }) => <TabGlyph active={focused} glyph="⌂" /> }} />
-        <Tabs.Screen name="shelf" options={{ title: 'Shelf', tabBarIcon: ({ focused }) => <TabGlyph active={focused} glyph="▤" /> }} />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Today",
+            tabBarIcon: ({ focused }) => (
+              <TabGlyph active={focused} glyph="⌂" />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="shelf"
+          options={{
+            title: "Shelf",
+            tabBarIcon: ({ focused }) => (
+              <TabGlyph active={focused} glyph="▤" />
+            ),
+          }}
+        />
         <Tabs.Screen
           name="add"
           listeners={{ tabPress: (event) => event.preventDefault() }}
           options={{
-            title: '',
+            title: "",
             tabBarButton: () => (
               <Pressable
                 accessibilityLabel="Add to learning shelf"
@@ -50,8 +70,24 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen name="alignments" options={{ title: 'Align', tabBarIcon: ({ focused }) => <TabGlyph active={focused} glyph="✓" /> }} />
-        <Tabs.Screen name="profile" options={{ title: 'You', tabBarIcon: ({ focused }) => <TabGlyph active={focused} glyph="◉" /> }} />
+        <Tabs.Screen
+          name="alignments"
+          options={{
+            title: "Align",
+            tabBarIcon: ({ focused }) => (
+              <TabGlyph active={focused} glyph="✓" />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "You",
+            tabBarIcon: ({ focused }) => (
+              <TabGlyph active={focused} glyph="◉" />
+            ),
+          }}
+        />
         <Tabs.Screen name="portfolio" options={{ href: null }} />
       </Tabs>
 

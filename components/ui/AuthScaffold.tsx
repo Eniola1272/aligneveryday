@@ -1,6 +1,12 @@
-import type { PropsWithChildren, ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import type { PropsWithChildren, ReactNode } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface AuthScaffoldProps extends PropsWithChildren {
   eyebrow?: string;
@@ -10,7 +16,7 @@ interface AuthScaffoldProps extends PropsWithChildren {
 }
 
 export function AuthScaffold({
-  eyebrow = 'ALIGN EVERYDAY',
+  eyebrow = "ALIGN EVERYDAY",
   title,
   subtitle,
   children,
@@ -19,7 +25,7 @@ export function AuthScaffold({
   return (
     <SafeAreaView className="flex-1 bg-ink">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
         <ScrollView
@@ -28,11 +34,15 @@ export function AuthScaffold({
           showsVerticalScrollIndicator={false}
         >
           <View>
-            <Text className="text-xs font-bold tracking-[3px] text-accent">{eyebrow}</Text>
+            <Text className="text-xs font-bold tracking-[3px] text-accent">
+              {eyebrow}
+            </Text>
             <Text className="mt-5 text-4xl font-extrabold leading-[44px] tracking-tight text-cream">
               {title}
             </Text>
-            <Text className="mt-4 max-w-md text-base leading-6 text-muted">{subtitle}</Text>
+            <Text className="mt-4 max-w-md text-base leading-6 text-muted">
+              {subtitle}
+            </Text>
             <View className="mt-10">{children}</View>
           </View>
           {footer ? <View className="mt-10">{footer}</View> : null}

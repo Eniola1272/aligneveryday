@@ -15,8 +15,8 @@ export function formatDuration(totalSeconds: number): string {
   const seconds = safeSeconds % 60;
 
   return [hours, minutes, seconds]
-    .map((unit) => unit.toString().padStart(2, '0'))
-    .join(':');
+    .map((unit) => unit.toString().padStart(2, "0"))
+    .join(":");
 }
 
 export function formatRemainingTime(totalSeconds: number): string {
