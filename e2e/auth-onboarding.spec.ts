@@ -1,4 +1,6 @@
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+import { expect, test } from "./fixtures";
 
 const userId = "40000000-0000-0000-0000-000000000004";
 
@@ -30,7 +32,6 @@ async function mockSupabase(page: Page) {
   await page.route("http://127.0.0.1:54321/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-
     if (url.pathname === "/auth/v1/signup") {
       await route.fulfill({
         contentType: "application/json",
@@ -43,7 +44,7 @@ async function mockSupabase(page: Page) {
             id: userId,
             aud: "authenticated",
             role: "authenticated",
-            email: "journey@example.com",
+            email: "journey@aligneveryday.app",
             app_metadata: { provider: "email", providers: ["email"] },
             user_metadata: { full_name: "Journey Tester" },
             created_at: new Date().toISOString(),
@@ -100,13 +101,13 @@ test("email signup requires an address and completes onboarding", async ({
 
   await page.getByLabel("Full name").fill("Journey Tester");
   await page.getByLabel("Email").fill("not-an-email");
-  await page.getByLabel("Password").fill("strong-password");
+  await page.locator('input[aria-label="Password"]').fill("strong-password");
   await page.getByRole("button", { name: "Create workspace" }).click();
   await expect(
     page.getByText("A valid email address is required."),
   ).toBeVisible();
 
-  await page.getByLabel("Email").fill("journey@example.com");
+  await page.getByLabel("Email").fill("journey@aligneveryday.app");
   await page.getByRole("button", { name: "Create workspace" }).click();
   await expect(page.getByText("Make the workspace yours.")).toBeVisible();
 

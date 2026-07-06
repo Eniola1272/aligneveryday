@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "expo:check": "expo install --check",
     "build": "expo export --platform web",
-    "test:e2e": "playwright test",
+    "test:e2e": "EXPO_PUBLIC_E2E=true EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 EXPO_PUBLIC_SUPABASE_ANON_KEY=e2e-anon-key npm run build && playwright test",
     "test:e2e:ui": "playwright test --ui",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",

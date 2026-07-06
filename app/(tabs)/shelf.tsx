@@ -93,6 +93,8 @@ export default function ShelfScreen() {
             );
             return (
               <Pressable
+                accessibilityLabel={`Open ${course.title}`}
+                accessibilityRole="button"
                 className="rounded-[28px] bg-surface p-6 active:bg-elevated"
                 key={course.id}
                 onPress={() =>

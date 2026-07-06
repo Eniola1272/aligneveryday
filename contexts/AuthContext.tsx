@@ -15,6 +15,8 @@ import { supabase } from "@/lib/supabase";
 import type { Profile } from "@/types/database";
 
 const DEMO_USER_ID = "00000000-0000-0000-0000-000000000001";
+const E2E_USER_ID = "40000000-0000-0000-0000-000000000004";
+const isE2ETest = process.env.EXPO_PUBLIC_E2E === "true";
 
 const demoProfile: Profile = {
   id: DEMO_USER_ID,
@@ -208,6 +210,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       },
       async signUp(input) {
+        if (isE2ETest) {
+          const e2eSession = {
+            access_token: "e2e-access-token",
+            refresh_token: "e2e-refresh-token",
+            expires_in: 3600,
+            token_type: "bearer",
+            user: {
+              id: E2E_USER_ID,
+              aud: "authenticated",
+              role: "authenticated",
+              email: input.email.trim().toLowerCase(),
+              app_metadata: { provider: "email", providers: ["email"] },
+              user_metadata: { full_name: input.fullName.trim() },
+              identities: [],
+              created_at: new Date().toISOString(),
+            },
+          } as Session;
+          setProfile({
+            id: E2E_USER_ID,
+            full_name: input.fullName.trim(),
+            username: null,
+            avatar_url: null,
+            bio: null,
+            portfolio_public: false,
+          });
+          setSession(e2eSession);
+          return { needsEmailConfirmation: false };
+        }
         if (!supabase)
           throw new Error("Supabase is not configured. Use demo mode for now.");
         const { data, error } = await supabase.auth.signUp({
@@ -256,6 +286,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
           bio: input.bio.trim() || null,
           portfolio_public: input.portfolioPublic,
         };
+        if (isE2ETest) {
+          setProfile(nextProfile);
+          return;
+        }
         const { data, error } = await supabase
           .from("profiles")
           .upsert(nextProfile)

@@ -174,6 +174,7 @@ export function AddTodoModal({
             />
 
             <Pressable
+              accessibilityRole="button"
               className={`mt-8 items-center rounded-2xl bg-accent px-6 py-5 ${isSubmitting ? "opacity-50" : "active:opacity-75"}`}
               disabled={isSubmitting}
               onPress={submit}

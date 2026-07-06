@@ -25,6 +25,7 @@ export function CourseCard({ course, onPress }: CourseCardProps) {
   return (
     <Pressable
       accessibilityHint="Opens the course workspace"
+      accessibilityLabel={`Open focus course ${course.title}`}
       accessibilityRole="button"
       className="mr-4 h-64 w-72 justify-between rounded-[28px] bg-surface p-6 active:bg-elevated"
       onPress={onPress}
