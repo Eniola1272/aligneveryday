@@ -64,6 +64,8 @@ npm run test:e2e
 
 Database migration, backup, rollback, and RLS test commands are documented in
 [`docs/database-operations.md`](docs/database-operations.md).
+Crash reporting, privacy rules, release dashboards, and alert thresholds are documented in
+[`docs/observability.md`](docs/observability.md).
 
 `npm run build` produces the Expo web export in `dist`.
 The Playwright suite uses deterministic mocked authentication and demo data; it

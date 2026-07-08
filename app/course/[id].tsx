@@ -109,10 +109,17 @@ export default function CourseWorkspaceScreen() {
 
   async function completeCourse() {
     setIsSaving(true);
+    setFeedback(null);
     try {
       await updateProgress(course.id, course.total_duration_sec);
       await updateStatus(course.id, "completed");
       router.back();
+    } catch (error) {
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "Could not complete this course.",
+      );
     } finally {
       setIsSaving(false);
     }

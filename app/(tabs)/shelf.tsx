@@ -80,7 +80,10 @@ export default function ShelfScreen() {
             onPress={() => void refresh()}
           >
             <Text className="font-bold text-red-400">
-              Couldn’t load your shelf. Tap to retry.
+              Something didn’t sync.
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-zinc-300">
+              {error} Tap to refresh your shelf.
             </Text>
           </Pressable>
         ) : null}

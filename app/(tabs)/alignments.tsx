@@ -119,7 +119,7 @@ export default function AlignmentsScreen() {
       const confirmed = globalThis.window?.confirm(
         "Delete this alignment? This removes it from your learning record.",
       );
-      if (confirmed) void deleteTodo(todoId);
+      if (confirmed) void deleteTodo(todoId).catch(() => undefined);
       return;
     }
 
@@ -131,7 +131,7 @@ export default function AlignmentsScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => void deleteTodo(todoId),
+          onPress: () => void deleteTodo(todoId).catch(() => undefined),
         },
       ],
     );
@@ -190,7 +190,10 @@ export default function AlignmentsScreen() {
             onPress={() => void refresh()}
           >
             <Text className="font-bold text-red-400">
-              Alignments could not sync. Tap to retry.
+              Something didn’t sync.
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-zinc-300">
+              {error} Tap to refresh your alignments.
             </Text>
           </Pressable>
         ) : null}
@@ -215,7 +218,7 @@ export default function AlignmentsScreen() {
                 }`}
                 onPress={(event) => {
                   event.stopPropagation();
-                  void toggleTodo(todo.id);
+                  void toggleTodo(todo.id).catch(() => undefined);
                 }}
               >
                 {todo.is_completed ? (

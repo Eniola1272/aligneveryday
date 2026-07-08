@@ -9,6 +9,7 @@ import {
 
 import { mockCourses, mockTodos } from "@/data/mock";
 import { supabase } from "@/lib/supabase";
+import { createActionError } from "@/lib/observability";
 import type { Course, CourseStatus, Todo } from "@/types/database";
 import type { AddShelfDraft, DashboardTodo, TodoDraft } from "@/types/learning";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,11 +86,12 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
     setIsLoading(false);
 
     if (coursesResult.error || todosResult.error) {
-      setError(
-        coursesResult.error?.message ??
-          todosResult.error?.message ??
-          "Unable to load workspace.",
+      const syncError = createActionError(
+        coursesResult.error ?? todosResult.error,
+        { entity: "workspace", operation: "hydrate" },
+        "We couldn’t sync your workspace. Tap to try again.",
       );
+      setError(syncError.message);
       return;
     }
 
@@ -109,6 +111,7 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
       isLoading,
       error,
       async addCourse(draft) {
+        setError(null);
         if (!userId) throw new Error("Sign in to add a course.");
         const courseInput = {
           user_id: userId,
@@ -134,11 +137,20 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
           .insert(courseInput)
           .select("*")
           .single();
-        if (mutationError) throw new Error(mutationError.message);
+        if (mutationError) {
+          const actionError = createActionError(
+            mutationError,
+            { entity: "course", operation: "create" },
+            "We couldn’t add this learning path. Check your connection and try again.",
+          );
+          setError(actionError.message);
+          throw actionError;
+        }
         setCourses((current) => [data, ...current]);
         return data;
       },
       async updateCourse(courseId, draft) {
+        setError(null);
         const target = courses.find((course) => course.id === courseId);
         if (!target) throw new Error("That course could not be found.");
         const updates = {
@@ -174,11 +186,18 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
           if (mutationError) {
             setCourses(previous);
             setTodos((current) => withCourseLabels(previous, current));
-            throw new Error(mutationError.message);
+            const actionError = createActionError(
+              mutationError,
+              { entity: "course", operation: "update" },
+              "We couldn’t save those course changes. Try again.",
+            );
+            setError(actionError.message);
+            throw actionError;
           }
         }
       },
       async addTodo(input) {
+        setError(null);
         if (!userId) throw new Error("Sign in to add an alignment.");
         const todoInput = {
           user_id: userId,
@@ -201,13 +220,22 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
             .insert(todoInput)
             .select("*")
             .single();
-          if (mutationError) throw new Error(mutationError.message);
+          if (mutationError) {
+            const actionError = createActionError(
+              mutationError,
+              { entity: "todo", operation: "create" },
+              "We couldn’t add this alignment. Check your connection and try again.",
+            );
+            setError(actionError.message);
+            throw actionError;
+          }
           todo = data;
         }
         setTodos((current) => withCourseLabels(courses, [todo, ...current]));
         return todo;
       },
       async updateTodo(todoId, input) {
+        setError(null);
         const target = todos.find((todo) => todo.id === todoId);
         if (!target) throw new Error("That alignment could not be found.");
         const updates = {
@@ -236,11 +264,18 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
                 current.map((todo) => (todo.id === todoId ? target : todo)),
               ),
             );
-            throw new Error(mutationError.message);
+            const actionError = createActionError(
+              mutationError,
+              { entity: "todo", operation: "update" },
+              "We couldn’t save those alignment changes. Try again.",
+            );
+            setError(actionError.message);
+            throw actionError;
           }
         }
       },
       async toggleTodo(todoId) {
+        setError(null);
         const target = todos.find((todo) => todo.id === todoId);
         if (!target) return;
         const nextCompleted = !target.is_completed;
@@ -276,11 +311,18 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
                   : todo,
               ),
             );
-            throw new Error(mutationError.message);
+            const actionError = createActionError(
+              mutationError,
+              { entity: "todo", operation: "toggle" },
+              "We couldn’t update that alignment. Your previous state has been restored.",
+            );
+            setError(actionError.message);
+            throw actionError;
           }
         }
       },
       async deleteTodo(todoId) {
+        setError(null);
         const previous = todos;
         setTodos((current) => current.filter((todo) => todo.id !== todoId));
         if (!isDemo && supabase) {
@@ -290,11 +332,18 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
             .eq("id", todoId);
           if (mutationError) {
             setTodos(previous);
-            throw new Error(mutationError.message);
+            const actionError = createActionError(
+              mutationError,
+              { entity: "todo", operation: "delete" },
+              "We couldn’t remove that alignment. It has been restored.",
+            );
+            setError(actionError.message);
+            throw actionError;
           }
         }
       },
       async updateCourseProgress(courseId, seconds) {
+        setError(null);
         const target = courses.find((course) => course.id === courseId);
         if (!target) return;
         const safeSeconds = Math.min(
@@ -313,10 +362,30 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
             .from("courses")
             .update({ current_progress_sec: safeSeconds })
             .eq("id", courseId);
-          if (mutationError) throw new Error(mutationError.message);
+          if (mutationError) {
+            setCourses((current) =>
+              current.map((course) =>
+                course.id === courseId
+                  ? {
+                      ...course,
+                      current_progress_sec: target.current_progress_sec,
+                    }
+                  : course,
+              ),
+            );
+            const actionError = createActionError(
+              mutationError,
+              { entity: "course", operation: "update_progress" },
+              "We couldn’t save your learning time. Your previous progress has been restored.",
+            );
+            setError(actionError.message);
+            throw actionError;
+          }
         }
       },
       async updateCourseStatus(courseId, status) {
+        setError(null);
+        const target = courses.find((course) => course.id === courseId);
         setCourses((current) =>
           current.map((course) =>
             course.id === courseId ? { ...course, status } : course,
@@ -327,7 +396,24 @@ export function ProductivityProvider({ children }: PropsWithChildren) {
             .from("courses")
             .update({ status })
             .eq("id", courseId);
-          if (mutationError) throw new Error(mutationError.message);
+          if (mutationError) {
+            if (target) {
+              setCourses((current) =>
+                current.map((course) =>
+                  course.id === courseId
+                    ? { ...course, status: target.status }
+                    : course,
+                ),
+              );
+            }
+            const actionError = createActionError(
+              mutationError,
+              { entity: "course", operation: "update_status" },
+              "We couldn’t update that course status. Try again.",
+            );
+            setError(actionError.message);
+            throw actionError;
+          }
         }
       },
       refresh: hydrate,

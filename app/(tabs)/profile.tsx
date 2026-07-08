@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import {
   Alert,
   Platform,
@@ -10,12 +11,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { getErrorMessage, useAuth } from "@/contexts/AuthContext";
 import { useProductivity } from "@/contexts/ProductivityContext";
 
 export default function ProfileScreen() {
   const { profile, email, isDemo, signOut, updateProfile } = useAuth();
   const { courses, todos } = useProductivity();
+  const [actionError, setActionError] = useState<string | null>(null);
   const completedCourses = courses.filter(
     (course) => course.status === "completed",
   ).length;
@@ -28,7 +30,8 @@ export default function ProfileScreen() {
           ? "Leave the demo? Your demo changes will reset."
           : "Sign out? Your synced progress will be here when you return.",
       );
-      if (confirmed) void signOut();
+      if (confirmed)
+        void signOut().catch((error) => setActionError(getErrorMessage(error)));
       return;
     }
 
@@ -42,7 +45,10 @@ export default function ProfileScreen() {
         {
           text: isDemo ? "Leave demo" : "Sign out",
           style: "destructive",
-          onPress: () => void signOut(),
+          onPress: () =>
+            void signOut().catch((error) =>
+              setActionError(getErrorMessage(error)),
+            ),
         },
       ],
     );
@@ -50,12 +56,17 @@ export default function ProfileScreen() {
 
   async function togglePortfolio(value: boolean) {
     if (!profile) return;
-    await updateProfile({
-      fullName: profile.full_name ?? "",
-      username: profile.username ?? "",
-      bio: profile.bio ?? "",
-      portfolioPublic: value,
-    });
+    setActionError(null);
+    try {
+      await updateProfile({
+        fullName: profile.full_name ?? "",
+        username: profile.username ?? "",
+        bio: profile.bio ?? "",
+        portfolioPublic: value,
+      });
+    } catch (error) {
+      setActionError(getErrorMessage(error));
+    }
   }
 
   return (
@@ -91,6 +102,17 @@ export default function ProfileScreen() {
             <Text className="mt-1 text-sm leading-5 text-zinc-300">
               Everything is interactive, but changes stay on this device
               session.
+            </Text>
+          </View>
+        ) : null}
+
+        {actionError ? (
+          <View className="mt-5 rounded-2xl bg-red-500/10 p-4">
+            <Text className="font-bold text-red-400">
+              That change didn’t sync.
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-zinc-300">
+              {actionError}
             </Text>
           </View>
         ) : null}

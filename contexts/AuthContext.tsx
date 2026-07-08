@@ -12,6 +12,7 @@ import {
 import { Platform } from "react-native";
 
 import { supabase } from "@/lib/supabase";
+import { captureOperationError, createActionError } from "@/lib/observability";
 import type { Profile } from "@/types/database";
 
 const DEMO_USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -102,11 +103,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   async function hydrateProfile(userId: string) {
     if (!supabase) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .maybeSingle();
+    if (error) {
+      captureOperationError(error, { entity: "profile", operation: "hydrate" });
+      return;
+    }
     setProfile(data);
   }
 
@@ -118,8 +123,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     let isMounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(async ({ data, error }) => {
       if (!isMounted) return;
+      if (error) {
+        captureOperationError(error, {
+          entity: "auth",
+          operation: "get_session",
+        });
+      }
       setSession(data.session);
       if (data.session) await hydrateProfile(data.session.user.id);
       if (isMounted) setIsLoading(false);
@@ -152,10 +163,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!supabase) return;
 
     void Linking.getInitialURL().then((url) => {
-      if (url) void consumeAuthRedirect(url);
+      if (url) {
+        void consumeAuthRedirect(url).catch((error) =>
+          captureOperationError(error, {
+            entity: "auth",
+            operation: "consume_redirect",
+          }),
+        );
+      }
     });
     const subscription = Linking.addEventListener("url", ({ url }) => {
-      void consumeAuthRedirect(url);
+      void consumeAuthRedirect(url).catch((error) =>
+        captureOperationError(error, {
+          entity: "auth",
+          operation: "consume_redirect",
+        }),
+      );
     });
     return () => subscription.remove();
   }, []);
@@ -183,7 +206,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
           email: email.trim().toLowerCase(),
           password,
         });
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw createActionError(
+            error,
+            { entity: "auth", operation: "sign_in" },
+            "We couldn’t sign you in. Check your details and try again.",
+          );
+        }
       },
       async signInWithGoogle() {
         if (!supabase)
@@ -197,7 +226,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
             skipBrowserRedirect: Platform.OS !== "web",
           },
         });
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw createActionError(
+            error,
+            { entity: "auth", operation: "google_sign_in" },
+            "Google sign-in couldn’t be started. Try again.",
+          );
+        }
 
         if (Platform.OS !== "web") {
           if (!data.url)
@@ -248,7 +283,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
             emailRedirectTo: Linking.createURL("/onboarding"),
           },
         });
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw createActionError(
+            error,
+            { entity: "auth", operation: "sign_up" },
+            "We couldn’t create your account. Check your connection and try again.",
+          );
+        }
         return { needsEmailConfirmation: !data.session };
       },
       async sendPasswordReset(email) {
@@ -259,12 +300,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
             redirectTo: Linking.createURL("/update-password"),
           },
         );
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw createActionError(
+            error,
+            { entity: "auth", operation: "password_reset" },
+            "We couldn’t send the reset email. Try again shortly.",
+          );
+        }
       },
       async updatePassword(password) {
         if (!supabase) throw new Error("Supabase is not configured.");
         const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw createActionError(
+            error,
+            { entity: "auth", operation: "update_password" },
+            "We couldn’t update your password. Try again.",
+          );
+        }
       },
       async updateProfile(input) {
         if (isDemo) {
@@ -295,7 +348,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
           .upsert(nextProfile)
           .select("*")
           .single();
-        if (error) throw new Error(error.message);
+        if (error) {
+          throw createActionError(
+            error,
+            { entity: "profile", operation: "update" },
+            "We couldn’t save your profile. Try again.",
+          );
+        }
         setProfile(data);
       },
       async signOut() {
@@ -306,7 +365,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
         if (supabase) {
           const { error } = await supabase.auth.signOut();
-          if (error) throw new Error(error.message);
+          if (error) {
+            throw createActionError(
+              error,
+              { entity: "auth", operation: "sign_out" },
+              "We couldn’t sign you out. Try again.",
+            );
+          }
         }
       },
       enterDemo() {

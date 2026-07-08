@@ -140,10 +140,10 @@ export default function DashboardScreen() {
               onPress={() => void refresh()}
             >
               <Text className="font-bold text-red-400">
-                Workspace could not sync.
+                Something didn’t sync.
               </Text>
               <Text className="mt-1 text-sm text-zinc-300">
-                Tap to try again. Your local screen is still safe.
+                {error} Tap to refresh your workspace.
               </Text>
             </Pressable>
           ) : null}
@@ -213,7 +213,7 @@ export default function DashboardScreen() {
                   setEditingTodo(todo);
                   setIsTodoModalOpen(true);
                 }}
-                onToggle={() => void toggleTodo(todo.id)}
+                onToggle={() => void toggleTodo(todo.id).catch(() => undefined)}
                 todo={todo}
               />
             ))}

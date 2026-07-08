@@ -1,14 +1,27 @@
 import "@/global.css";
 
-import { Stack } from "expo-router";
+import { Stack, useNavigationContainerRef, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
+import { CrashFallback } from "@/components/ui/CrashFallback";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProductivityProvider } from "@/contexts/ProductivityContext";
+import {
+  identifyObservabilityUser,
+  navigationIntegration,
+  Sentry,
+  setObservabilityRoute,
+} from "@/lib/observability";
 
 function AppNavigator() {
-  const { isAuthenticated, isLoading, needsOnboarding } = useAuth();
+  const { isAuthenticated, isDemo, isLoading, needsOnboarding, userId } =
+    useAuth();
+
+  useEffect(() => {
+    identifyObservabilityUser(isDemo ? null : userId);
+  }, [isDemo, userId]);
 
   if (isLoading) {
     return (
@@ -51,13 +64,30 @@ function AppNavigator() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
+  const navigationRef = useNavigationContainerRef();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    navigationIntegration.registerNavigationContainer(navigationRef);
+  }, [navigationRef]);
+
+  useEffect(() => {
+    setObservabilityRoute(pathname);
+  }, [pathname]);
+
   return (
-    <AuthProvider>
-      <ProductivityProvider>
-        <StatusBar style="light" />
-        <AppNavigator />
-      </ProductivityProvider>
-    </AuthProvider>
+    <Sentry.ErrorBoundary
+      fallback={({ resetError }) => <CrashFallback resetError={resetError} />}
+    >
+      <AuthProvider>
+        <ProductivityProvider>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </ProductivityProvider>
+      </AuthProvider>
+    </Sentry.ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);
