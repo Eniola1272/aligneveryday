@@ -17,7 +17,7 @@ import {
   formatDateRange,
   formatTaskDate,
   isAfterToday,
-  isBeforeToday,
+  isPastDue,
   isSameLocalDay,
 } from "@/utils/date";
 
@@ -55,6 +55,9 @@ function sortTasks(
         new Date(second.start_date ?? second.due_date ?? 0).getTime()
       );
     }
+    const firstOverdue = !first.is_completed && isPastDue(first.due_date);
+    const secondOverdue = !second.is_completed && isPastDue(second.due_date);
+    if (firstOverdue !== secondOverdue) return firstOverdue ? -1 : 1;
     return first.sort_order - second.sort_order;
   });
 }
@@ -65,8 +68,8 @@ function getTaskMeta(todo: DashboardTodo, filter: TaskFilter): string {
       ? "Completed today"
       : `Completed ${formatTaskDate(getCompletionDate(todo))}`;
   }
-  if (todo.due_date && isBeforeToday(todo.due_date)) {
-    return `Overdue · ended ${formatTaskDate(todo.due_date)}`;
+  if (isPastDue(todo.due_date)) {
+    return `Overdue · due ${formatTaskDate(todo.due_date)}`;
   }
   return formatDateRange(todo.start_date, todo.due_date);
 }
@@ -199,77 +202,101 @@ export default function AlignmentsScreen() {
         ) : null}
 
         <View className="mt-7 gap-3">
-          {visibleTodos.map((todo) => (
-            <Pressable
-              accessibilityHint="Opens this alignment for editing"
-              accessibilityRole="button"
-              className={`flex-row items-center rounded-[28px] p-5 active:bg-elevated ${
-                todo.is_completed ? "bg-[#141414]" : "bg-surface"
-              }`}
-              key={todo.id}
-              onPress={() => openEditModal(todo)}
-            >
-              <Pressable
-                accessibilityLabel={`${todo.task_title}: ${
-                  todo.is_completed ? "Mark incomplete" : "Mark complete"
-                }`}
-                className={`mr-4 h-11 w-11 items-center justify-center rounded-full ${
-                  todo.is_completed ? "bg-accent" : "border-2 border-zinc-600"
-                }`}
-                onPress={(event) => {
-                  event.stopPropagation();
-                  void toggleTodo(todo.id).catch(() => undefined);
-                }}
-              >
-                {todo.is_completed ? (
-                  <Text className="text-xl font-black text-black">✓</Text>
-                ) : null}
-              </Pressable>
-
-              <View className="min-w-0 flex-1">
-                <Text
-                  className={`text-lg font-semibold leading-6 ${
+          {visibleTodos.map((todo) =>
+            (() => {
+              const isOverdue = !todo.is_completed && isPastDue(todo.due_date);
+              return (
+                <Pressable
+                  accessibilityHint="Opens this alignment for editing"
+                  accessibilityRole="button"
+                  className={`flex-row items-center rounded-[28px] p-5 active:bg-elevated ${
                     todo.is_completed
-                      ? "text-zinc-500 line-through"
-                      : "text-cream"
+                      ? "bg-[#141414]"
+                      : isOverdue
+                        ? "bg-red-950/20"
+                        : "bg-surface"
                   }`}
+                  key={todo.id}
+                  onPress={() => openEditModal(todo)}
                 >
-                  {todo.task_title}
-                </Text>
-                <View className="mt-2 flex-row flex-wrap items-center">
-                  {todo.courseLabel ? (
-                    <Text className="mr-3 text-xs font-semibold text-accent">
-                      {todo.courseLabel}
-                    </Text>
-                  ) : null}
-                  <Text className="text-sm text-muted">
-                    {getTaskMeta(todo, filter)}
-                  </Text>
-                </View>
-              </View>
+                  <Pressable
+                    accessibilityLabel={`${todo.task_title}: ${
+                      todo.is_completed ? "Mark incomplete" : "Mark complete"
+                    }`}
+                    className={`mr-4 h-11 w-11 items-center justify-center rounded-full ${
+                      todo.is_completed
+                        ? "bg-accent"
+                        : isOverdue
+                          ? "border-2 border-red-400"
+                          : "border-2 border-zinc-600"
+                    }`}
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      void toggleTodo(todo.id).catch(() => undefined);
+                    }}
+                  >
+                    {todo.is_completed ? (
+                      <Text className="text-xl font-black text-black">✓</Text>
+                    ) : null}
+                  </Pressable>
 
-              <Pressable
-                accessibilityLabel="Edit alignment"
-                className="ml-2 p-3"
-                onPress={(event) => {
-                  event.stopPropagation();
-                  openEditModal(todo);
-                }}
-              >
-                <Text className="rotate-[135deg] text-lg text-accent">✏</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel="Delete alignment"
-                className="p-3"
-                onPress={(event) => {
-                  event.stopPropagation();
-                  confirmDelete(todo.id);
-                }}
-              >
-                <Text className="text-xl text-zinc-600">×</Text>
-              </Pressable>
-            </Pressable>
-          ))}
+                  <View className="min-w-0 flex-1">
+                    {isOverdue ? (
+                      <Text className="mb-1 text-xs font-bold uppercase tracking-[1.5px] text-red-400">
+                        Deadline passed
+                      </Text>
+                    ) : null}
+                    <Text
+                      className={`text-lg font-semibold leading-6 ${
+                        todo.is_completed
+                          ? "text-zinc-500 line-through"
+                          : "text-cream"
+                      }`}
+                    >
+                      {todo.task_title}
+                    </Text>
+                    <View className="mt-2 flex-row flex-wrap items-center">
+                      {todo.courseLabel ? (
+                        <Text className="mr-3 text-xs font-semibold text-accent">
+                          {todo.courseLabel}
+                        </Text>
+                      ) : null}
+                      <Text
+                        className={`text-sm ${
+                          isOverdue ? "text-red-300" : "text-muted"
+                        }`}
+                      >
+                        {getTaskMeta(todo, filter)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Pressable
+                    accessibilityLabel="Edit alignment"
+                    className="ml-2 p-3"
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      openEditModal(todo);
+                    }}
+                  >
+                    <Text className="rotate-[135deg] text-lg text-accent">
+                      ✏
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel="Delete alignment"
+                    className="p-3"
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      confirmDelete(todo.id);
+                    }}
+                  >
+                    <Text className="text-xl text-zinc-600">×</Text>
+                  </Pressable>
+                </Pressable>
+              );
+            })(),
+          )}
         </View>
 
         {filter === "today" && completedTodayCount > 0 ? (

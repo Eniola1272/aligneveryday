@@ -31,6 +31,14 @@ export function isBeforeToday(
   return new Date(value).getTime() < startOfToday.getTime();
 }
 
+export function isPastDue(
+  value: string | null,
+  reference = new Date(),
+): boolean {
+  if (!value) return false;
+  return new Date(value).getTime() < reference.getTime();
+}
+
 export function startOfLocalDayIso(date: Date): string {
   const value = new Date(date);
   value.setHours(0, 0, 0, 0);
