@@ -4,6 +4,9 @@
     "slug": "align-everyday",
     "scheme": "aligneveryday",
     "version": "0.1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "plugins": [
@@ -14,7 +17,13 @@
           "experimentalLauncherActivity": false
         }
       ],
-      "@sentry/react-native"
+      [
+        "@sentry/react-native",
+        {
+          "organization": "align-digital-tech",
+          "project": "react-native"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -29,6 +38,16 @@
     },
     "web": {
       "bundler": "metro"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2709e058-6036-43fd-b37d-5493469abfeb"
+      }
+    },
+    "owner": "eniola1272",
+    "updates": {
+      "url": "https://u.expo.dev/2709e058-6036-43fd-b37d-5493469abfeb"
     }
   }
 }
