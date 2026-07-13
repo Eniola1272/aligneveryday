@@ -154,11 +154,9 @@ export default function ProfileScreen() {
             onPress={() => router.push("/portfolio")}
           >
             <View>
-              <Text className="font-bold text-cream">
-                View learning portfolio
-              </Text>
+              <Text className="font-bold text-cream">View trophy room</Text>
               <Text className="mt-1 text-sm text-muted">
-                See the public-facing story
+                Share proof and friends’ wins
               </Text>
             </View>
             <Text className="text-2xl text-accent">›</Text>
@@ -167,7 +165,7 @@ export default function ProfileScreen() {
             <View className="mr-4 flex-1">
               <Text className="font-bold text-cream">Public portfolio</Text>
               <Text className="mt-1 text-sm text-muted">
-                Share completed learning paths
+                Let anyone view completed trophies
               </Text>
             </View>
             <Switch

@@ -2,6 +2,8 @@ import type {
   Course,
   CourseStatus,
   LearningPlatform,
+  PortfolioInvitation,
+  Profile,
   Todo,
 } from "@/types/database";
 
@@ -35,4 +37,14 @@ export interface AddShelfDraft {
   hours: number;
   minutes: number;
   status: CourseStatus;
+}
+
+export interface TrophyRoom {
+  profile: Profile;
+  trophies: Course[];
+}
+
+export interface PortfolioInvitationWithProfile extends PortfolioInvitation {
+  inviterProfile?: Profile | null;
+  inviteeProfile?: Profile | null;
 }

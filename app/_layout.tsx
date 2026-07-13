@@ -7,6 +7,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 
 import { CrashFallback } from "@/components/ui/CrashFallback";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { PortfolioNetworkProvider } from "@/contexts/PortfolioNetworkContext";
 import { ProductivityProvider } from "@/contexts/ProductivityContext";
 import {
   identifyObservabilityUser,
@@ -59,6 +60,7 @@ function AppNavigator() {
         <Stack.Screen name="edit-profile" />
       </Stack.Protected>
 
+      <Stack.Screen name="portfolio/[username]" />
       <Stack.Screen name="update-password" />
     </Stack>
   );
@@ -82,8 +84,10 @@ function RootLayout() {
     >
       <AuthProvider>
         <ProductivityProvider>
-          <StatusBar style="light" />
-          <AppNavigator />
+          <PortfolioNetworkProvider>
+            <StatusBar style="light" />
+            <AppNavigator />
+          </PortfolioNetworkProvider>
         </ProductivityProvider>
       </AuthProvider>
     </Sentry.ErrorBoundary>

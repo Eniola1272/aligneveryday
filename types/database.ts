@@ -33,6 +33,20 @@ export type Todo = {
   sort_order: number;
 };
 
+export type PortfolioInvitationStatus = "pending" | "accepted" | "declined";
+
+export type PortfolioInvitation = {
+  id: string;
+  inviter_id: string;
+  invitee_id: string | null;
+  invitee_email: string | null;
+  status: PortfolioInvitationStatus;
+  message: string | null;
+  created_at: string;
+  accepted_at: string | null;
+  declined_at: string | null;
+};
+
 type Insertable<T extends { id: string }> = Omit<T, "id"> & { id?: string };
 type Updatable<T> = Partial<T>;
 
@@ -80,11 +94,33 @@ export type Database = {
           },
         ];
       };
+      portfolio_invitations: {
+        Row: PortfolioInvitation;
+        Insert: Insertable<PortfolioInvitation>;
+        Update: Updatable<PortfolioInvitation>;
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_invitations_inviter_id_fkey";
+            columns: ["inviter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "portfolio_invitations_invitee_id_fkey";
+            columns: ["invitee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
       course_status: CourseStatus;
+      portfolio_invitation_status: PortfolioInvitationStatus;
     };
     CompositeTypes: Record<string, never>;
   };

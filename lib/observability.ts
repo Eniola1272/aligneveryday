@@ -2,7 +2,14 @@ import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
-type Entity = "auth" | "course" | "profile" | "todo" | "workspace";
+type Entity =
+  | "auth"
+  | "course"
+  | "portfolio_invitation"
+  | "profile"
+  | "todo"
+  | "trophy_room"
+  | "workspace";
 
 interface OperationContext {
   entity: Entity;
