@@ -10,6 +10,7 @@ export interface CourseMilestone {
   title: string;
   meta: string;
   state: "completed" | "current" | "upcoming";
+  targetPercentage?: number;
 }
 
 export interface CourseWorkspace extends Course {

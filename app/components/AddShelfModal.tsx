@@ -266,10 +266,12 @@ export default function AddShelfModal({
                     accessibilityLabel="Hours"
                     className="rounded-2xl bg-elevated px-5 py-4 text-2xl text-cream"
                     keyboardType="number-pad"
-                    maxLength={2}
-                    onChangeText={(value) => setHours(parseNumber(value, 99))}
+                    maxLength={4}
+                    onChangeText={(value) => setHours(parseNumber(value, 9999))}
+                    placeholder="0"
+                    placeholderTextColor="#737373"
                     selectionColor="#FF9D00"
-                    value={hours.toString().padStart(2, "0")}
+                    value={hours ? hours.toString() : ""}
                   />
                 </View>
                 <View className="flex-1">
@@ -280,8 +282,10 @@ export default function AddShelfModal({
                     keyboardType="number-pad"
                     maxLength={2}
                     onChangeText={(value) => setMinutes(parseNumber(value, 59))}
+                    placeholder="0"
+                    placeholderTextColor="#737373"
                     selectionColor="#FF9D00"
-                    value={minutes.toString().padStart(2, "0")}
+                    value={minutes ? minutes.toString() : ""}
                   />
                 </View>
               </View>

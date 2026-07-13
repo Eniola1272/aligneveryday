@@ -2,6 +2,68 @@ import { useMemo } from "react";
 
 import { useProductivity } from "@/contexts/ProductivityContext";
 import type { CourseMilestone, CourseWorkspace } from "@/types/learning";
+import { getProgressPercentage } from "@/utils/time";
+
+const progressMilestoneTemplates = [
+  {
+    id: "start",
+    targetPercentage: 0,
+    title: "Start",
+    meta: "You’ve opened the path. Tiny momentum counts.",
+  },
+  {
+    id: "quarter",
+    targetPercentage: 25,
+    title: "Quarter done",
+    meta: "You’re building proof, not just consuming content.",
+  },
+  {
+    id: "middle",
+    targetPercentage: 50,
+    title: "Middle",
+    meta: "Halfway in. This is where consistency starts to compound.",
+  },
+  {
+    id: "last-quarter",
+    targetPercentage: 75,
+    title: "Last quarter",
+    meta: "Almost there. Finish strong and turn this into portfolio value.",
+  },
+  {
+    id: "end",
+    targetPercentage: 100,
+    title: "End",
+    meta: "Completed. Capture the outcome while it’s fresh.",
+  },
+] as const;
+
+export function buildCourseProgressMilestones(
+  currentProgressSec: number,
+  totalDurationSec: number,
+): CourseMilestone[] {
+  const progressPercentage = getProgressPercentage(
+    currentProgressSec,
+    totalDurationSec,
+  );
+  const nextIndex = progressMilestoneTemplates.findIndex(
+    (milestone) => milestone.targetPercentage > progressPercentage,
+  );
+
+  return progressMilestoneTemplates.map((milestone, index) => {
+    const isCompleted = progressPercentage >= milestone.targetPercentage;
+    const isCurrent =
+      !isCompleted && index === (nextIndex === -1 ? undefined : nextIndex);
+
+    return {
+      ...milestone,
+      state: isCompleted ? "completed" : isCurrent ? "current" : "upcoming",
+      meta:
+        milestone.targetPercentage === 100 && progressPercentage >= 100
+          ? "Finished. Now turn the learning into visible proof."
+          : milestone.meta,
+    };
+  });
+}
 
 const unavailableCourse: CourseWorkspace = {
   id: "unavailable",
@@ -29,44 +91,13 @@ export function useCourseWorkspace(courseId?: string) {
     const course = workspace.courses.find((item) => item.id === courseId);
     if (!course) return unavailableCourse;
 
-    const linkedTodos = workspace.todos.filter(
-      (todo) => todo.course_id === course.id,
+    const milestones = buildCourseProgressMilestones(
+      course.current_progress_sec,
+      course.total_duration_sec,
     );
-    let currentAssigned = false;
-    const milestones: CourseMilestone[] = linkedTodos.map((todo) => {
-      let state: CourseMilestone["state"] = "upcoming";
-      if (todo.is_completed) state = "completed";
-      else if (!currentAssigned) {
-        state = "current";
-        currentAssigned = true;
-      }
-      return {
-        id: todo.id,
-        title: todo.task_title,
-        meta: todo.is_completed ? "Alignment completed" : "Project alignment",
-        state,
-      };
-    });
-
-    if (milestones.length === 0) {
-      milestones.push(
-        {
-          id: "begin",
-          title: "Begin the learning path",
-          meta: "Current focus",
-          state: "current",
-        },
-        {
-          id: "align",
-          title: "Create your first alignment",
-          meta: "Turn learning into action",
-          state: "upcoming",
-        },
-      );
-    }
 
     return { ...course, milestones };
-  }, [courseId, workspace.courses, workspace.todos]);
+  }, [courseId, workspace.courses]);
 
   return {
     workspace: courseWorkspace,
